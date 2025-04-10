@@ -30,6 +30,17 @@ document.addEventListener("DOMContentLoaded", function () {
       codigo: "2021101385B",
       name: "Danny",
     },
+    Alexis: {
+      dni: "73435865",
+      codigo: "2019200797H",
+      name: "Alexis",
+    },
+    // Añadir un nuevo usuario aquí
+    nuevoUsuario: {
+      dni: "12345678",
+      codigo: "2023123456X",
+      name: "Nombre del Usuario",
+    },
     custom: {
       dni: "",
       codigo: "",
@@ -118,6 +129,18 @@ document.addEventListener("DOMContentLoaded", function () {
           config.codigo === profiles.danny.codigo
         ) {
           currentProfile = "danny";
+        } else if (
+          config.dni === profiles.Alexis.dni &&
+          config.codigo === profiles.Alexis.codigo
+        ) {
+          currentProfile = "Alexis";
+        }
+        // Añadir condición para el nuevo usuario aquí
+        else if (
+          config.dni === profiles.nuevoUsuario.dni &&
+          config.codigo === profiles.nuevoUsuario.codigo
+        ) {
+          currentProfile = "nuevoUsuario";
         }
         userProfileSelect.value = currentProfile;
       } else {
