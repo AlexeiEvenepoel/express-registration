@@ -16,6 +16,9 @@ const clients = [];
 // Estado del registro
 let registroActivo = false;
 let tareaRegistro = null;
+// Variables para almacenar el estado de programación
+let programacionActiva = false;
+let programacionFecha = null;
 
 // Middleware
 app.use(express.static(path.join(__dirname, "public")));
@@ -37,11 +40,22 @@ app.get("/api/events", (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
-  // Enviar un evento inicial
-  const data = JSON.stringify({
+  // Enviar un evento inicial con el estado actual
+  const initialData = {
     message: "Conexión establecida con el servidor",
-  });
-  res.write(`data: ${data}\n\n`);
+    initialState: {
+      isScheduled: programacionActiva,
+      scheduleTime: programacionFecha ? programacionFecha.toISOString() : null,
+      config: {
+        dni: config.dni,
+        codigo: config.codigo,
+        numSolicitudes: config.numSolicitudes,
+        intervalo: config.intervalo,
+        horaInicio: config.horaInicio,
+      },
+    },
+  };
+  res.write(`data: ${JSON.stringify(initialData)}\n\n`);
 
   // Registrar cliente
   const clientId = Date.now();
@@ -129,6 +143,11 @@ app.post("/api/cancel", (req, res) => {
     if (tareaRegistro) {
       tareaRegistro.stop();
       tareaRegistro = null;
+
+      // Limpiar estado global de programación
+      programacionActiva = false;
+      programacionFecha = null;
+
       sendToAllClients({
         message: "Programación cancelada",
         status: { type: "inactive", text: "Inactivo" },
@@ -271,6 +290,35 @@ function programarEjecucion(fechaHora) {
     tareaRegistro.stop();
   }
 
+  // Actualizar estado global de programación
+  programacionActiva = true;
+  programacionFecha = fechaHora;
+
+  // Verificar si la fecha ya pasó
+  const ahora = new Date();
+  if (fechaHora < ahora) {
+    console.log("La fecha programada ya pasó. Ejecutando inmediatamente...");
+    sendToAllClients({
+      message: "La fecha programada ya pasó. Ejecutando inmediatamente...",
+    });
+
+    // Ejecutar inmediatamente en lugar de programar
+    registroActivo = true;
+    enviarMultiplesSolicitudes()
+      .then(() => {
+        registroActivo = false;
+        // Limpiar estado de programación
+        programacionActiva = false;
+        programacionFecha = null;
+      })
+      .catch((err) => {
+        registroActivo = false;
+        console.error("Error en ejecución inmediata:", err);
+      });
+
+    return;
+  }
+
   // Obtener componentes de la fecha
   const minuto = fechaHora.getMinutes();
   const hora = fechaHora.getHours();
@@ -300,6 +348,9 @@ function programarEjecucion(fechaHora) {
       enviarMultiplesSolicitudes()
         .then(() => {
           registroActivo = false;
+          // Limpiar estado de programación después de ejecutar
+          programacionActiva = false;
+          programacionFecha = null;
         })
         .catch((err) => {
           registroActivo = false;

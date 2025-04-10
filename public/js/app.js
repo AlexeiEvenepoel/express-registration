@@ -380,7 +380,50 @@ document.addEventListener("DOMContentLoaded", function () {
     // Escuchar eventos
     eventSource.onmessage = function (event) {
       const data = JSON.parse(event.data);
-      addToResults(data.message);
+
+      // Manejar el estado inicial cuando se conecta
+      if (data.initialState) {
+        if (data.initialState.isScheduled && data.initialState.scheduleTime) {
+          // Recuperar la programación
+          const scheduledTime = new Date(data.initialState.scheduleTime);
+
+          // Actualizar el estado de la aplicación
+          appState.isScheduled = true;
+          appState.scheduleTime = scheduledTime;
+
+          // Actualizar la interfaz
+          setStatus("scheduled", "Programado");
+
+          // Mostrar la fecha y hora programadas
+          const formattedDate = scheduledTime.toLocaleString("es-ES", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          nextExecutionElement.textContent = `Próxima ejecución: ${formattedDate}`;
+          addToResults(`🔄 Recuperada programación para ${formattedDate}`);
+
+          // Si hay configuración, actualizarla
+          if (data.initialState.config) {
+            dniInput.value = data.initialState.config.dni;
+            codigoInput.value = data.initialState.config.codigo;
+            numSolicitudesInput.value = data.initialState.config.numSolicitudes;
+            intervaloInput.value = data.initialState.config.intervalo;
+            horaInicioInput.value = data.initialState.config.horaInicio;
+
+            // Determinar perfil actual
+            updateProfileSelector();
+          }
+        }
+      }
+
+      // Procesar mensaje normal
+      if (data.message) {
+        addToResults(data.message);
+      }
 
       if (data.status) {
         setStatus(data.status.type, data.status.text);
@@ -398,6 +441,39 @@ document.addEventListener("DOMContentLoaded", function () {
       eventSource.close();
       setTimeout(setupServerUpdates, 5000); // Reintentar cada 5 segundos
     };
+  }
+
+  // Función para actualizar el selector de perfiles basado en el DNI y código actual
+  function updateProfileSelector() {
+    const currentDni = dniInput.value;
+    const currentCodigo = codigoInput.value;
+
+    // Determinar qué perfil está cargado actualmente
+    let currentProfile = "custom";
+
+    if (
+      currentDni === profiles.jefer.dni &&
+      currentCodigo === profiles.jefer.codigo
+    ) {
+      currentProfile = "jefer";
+    } else if (
+      currentDni === profiles.danny.dni &&
+      currentCodigo === profiles.danny.codigo
+    ) {
+      currentProfile = "danny";
+    } else if (
+      currentDni === profiles.Alexis.dni &&
+      currentCodigo === profiles.Alexis.codigo
+    ) {
+      currentProfile = "Alexis";
+    } else if (
+      currentDni === profiles.nuevoUsuario.dni &&
+      currentCodigo === profiles.nuevoUsuario.codigo
+    ) {
+      currentProfile = "nuevoUsuario";
+    }
+
+    userProfileSelect.value = currentProfile;
   }
 
   // Iniciar escucha de eventos del servidor
