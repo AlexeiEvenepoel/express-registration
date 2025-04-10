@@ -1,0 +1,120 @@
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.main-card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    border: none;
+}
+
+.card {
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    transition: transform 0.2s;
+}
+
+.card-header h3 {
+    margin-bottom: 0;
+    font-size: 1.35rem;
+}
+
+/* Reloj */
+.clock {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #0d6efd;
+    margin: 15px auto;
+    padding: 10px;
+    background-color: #f1f8ff;
+    border-radius: 10px;
+    border: 2px solid #0d6efd;
+    width: fit-content;
+    min-width: 200px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Estado */
+.status-box {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.status-indicator {
+    font-size: 1.25rem;
+    font-weight: bold;
+    padding: 10px;
+    margin-top: 10px;
+    text-align: center;
+    border-radius: 6px;
+    background-color: #e9ecef;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #0f5132;
+}
+
+.status-scheduled {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+.status-error {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.next-execution {
+    margin-top: 10px;
+    font-size: 1rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+/* Resultados */
+.results-container {
+    background-color: #212529;
+    border-radius: 6px;
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.results {
+    color: #8ff0a4;
+    padding: 15px;
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+
+/* Botones */
+.btn-lg {
+    padding: 12px;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .clock {
+        font-size: 2rem;
+    }
+    
+    .card-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .results-container {
+        max-height: 300px;
+    }
+}

@@ -1,39 +1,193 @@
 require("dotenv").config();
+const express = require("express");
 const axios = require("axios");
 const cron = require("node-cron");
-const FormData = require("form-data"); // Importar FormData
+const FormData = require("form-data");
+const path = require("path");
+const fs = require("fs");
 
-// Datos para el registro
-const dni = process.env.DNI;
-const codigo = process.env.CODIGO;
-const numSolicitudes = parseInt(process.env.NUM_SOLICITUDES) || 50;
-const intervalo = parseInt(process.env.INTERVALO_MS) || 100;
-const horaInicio = process.env.HORA_INICIO || "07:00";
+// Configuración de la aplicación Express
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// URL del endpoint
-const apiUrl = "https://comensales.uncp.edu.pe/api/registros";
+// Conexiones de clientes SSE (Server-Sent Events)
+const clients = [];
 
-// Datos para enviar
-const postData = {
-  t1_id: null,
-  t1_dni: dni,
-  t1_codigo: codigo,
-  t1_nombres: "",
-  t1_escuela: "",
-  t1_estado: null,
-  t3_periodos_t3_id: null,
+// Estado del registro
+let registroActivo = false;
+let tareaRegistro = null;
+
+// Middleware
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json());
+
+// Cargar valores iniciales desde .env
+let config = {
+  dni: process.env.DNI || "",
+  codigo: process.env.CODIGO || "",
+  numSolicitudes: parseInt(process.env.NUM_SOLICITUDES) || 10,
+  intervalo: parseInt(process.env.INTERVALO_MS) || 100,
+  horaInicio: process.env.HORA_INICIO || "07:00",
 };
 
-// Modifica la función enviarSolicitud para usar FormData
+// Endpoint para recibir eventos del servidor (SSE)
+app.get("/api/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  // Enviar un evento inicial
+  const data = JSON.stringify({
+    message: "Conexión establecida con el servidor",
+  });
+  res.write(`data: ${data}\n\n`);
+
+  // Registrar cliente
+  const clientId = Date.now();
+  const newClient = {
+    id: clientId,
+    res,
+  };
+  clients.push(newClient);
+
+  // Eliminar cliente cuando se desconecte
+  req.on("close", () => {
+    const index = clients.findIndex((c) => c.id === clientId);
+    if (index !== -1) {
+      clients.splice(index, 1);
+    }
+  });
+});
+
+// Endpoint para ejecutar solicitudes inmediatamente
+app.post("/api/run-now", async (req, res) => {
+  try {
+    // Actualizar configuración con datos del cliente
+    updateConfig(req.body);
+
+    // Iniciar proceso en segundo plano
+    registroActivo = true;
+    enviarMultiplesSolicitudes()
+      .then(() => {
+        registroActivo = false;
+        sendToAllClients({
+          message: "Proceso completado",
+          complete: true,
+        });
+      })
+      .catch((err) => {
+        registroActivo = false;
+        sendToAllClients({
+          message: `Error en ejecución: ${err.message}`,
+          status: { type: "error", text: "Error" },
+          complete: true,
+        });
+      });
+
+    // Respuesta inmediata al cliente
+    res.json({
+      success: true,
+      message: `Iniciando envío de ${config.numSolicitudes} solicitudes`,
+    });
+  } catch (error) {
+    console.error("Error al ejecutar solicitudes:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Endpoint para programar solicitudes
+app.post("/api/schedule", (req, res) => {
+  try {
+    // Actualizar configuración con datos del cliente
+    updateConfig(req.body);
+
+    // Programar tarea
+    const scheduleTime = new Date(req.body.scheduleTime);
+    programarEjecucion(scheduleTime);
+
+    res.json({
+      success: true,
+      message: `Programación guardada para ${scheduleTime.toLocaleString()}`,
+    });
+  } catch (error) {
+    console.error("Error al programar solicitudes:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Endpoint para cancelar programación
+app.post("/api/cancel", (req, res) => {
+  try {
+    // Cancelar tarea programada
+    if (tareaRegistro) {
+      tareaRegistro.stop();
+      tareaRegistro = null;
+      sendToAllClients({
+        message: "Programación cancelada",
+        status: { type: "inactive", text: "Inactivo" },
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Programación cancelada",
+    });
+  } catch (error) {
+    console.error("Error al cancelar programación:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Actualizar configuración con datos del cliente
+function updateConfig(newConfig) {
+  if (newConfig) {
+    config.dni = newConfig.dni || config.dni;
+    config.codigo = newConfig.codigo || config.codigo;
+    config.numSolicitudes = newConfig.numSolicitudes || config.numSolicitudes;
+    config.intervalo = newConfig.intervalo || config.intervalo;
+    config.horaInicio = newConfig.horaInicio || config.horaInicio;
+  }
+}
+
+// Enviar evento a todos los clientes
+function sendToAllClients(data) {
+  clients.forEach((client) => {
+    client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+  });
+}
+
+// URL del endpoint del comedor
+const apiUrl = "https://comensales.uncp.edu.pe/api/registros";
+
+// Función para realizar una solicitud
 async function enviarSolicitud(indice) {
   try {
-    console.log(`Enviando solicitud ${indice + 1}/${numSolicitudes}...`);
+    console.log(`Enviando solicitud ${indice + 1}/${config.numSolicitudes}...`);
+
+    // Datos para enviar
+    const postData = {
+      t1_id: null,
+      t1_dni: config.dni,
+      t1_codigo: config.codigo,
+      t1_nombres: "",
+      t1_escuela: "",
+      t1_estado: null,
+      t3_periodos_t3_id: null,
+    };
 
     // Crear un FormData y añadir el campo "data" con el JSON
     const form = new FormData();
     form.append("data", JSON.stringify(postData));
-
-    console.log("Datos enviados:", JSON.stringify(postData));
 
     const response = await axios.post(apiUrl, form, {
       headers: {
@@ -42,29 +196,49 @@ async function enviarSolicitud(indice) {
       },
     });
 
-    console.log(`Respuesta ${indice + 1}: `, response.data);
+    const mensaje = `Solicitud ${indice + 1}: ${JSON.stringify(response.data)}`;
+    console.log(mensaje);
+    sendToAllClients({ message: mensaje });
+
     return response.data;
   } catch (error) {
     console.error(`Error en solicitud ${indice + 1}:`, error.message);
+    
+    let errorMsg = `Error en solicitud ${indice + 1}: ${error.message}`;
     if (error.response) {
-      console.error("Status:", error.response.status);
-      console.error("Headers:", error.response.headers);
-      console.error("Datos de respuesta:", error.response.data);
+      errorMsg += ` - ${JSON.stringify(error.response.data)}`;
     }
+    
+    sendToAllClients({ message: errorMsg });
     return null;
   }
 }
 
 // Función para enviar múltiples solicitudes con intervalo
 async function enviarMultiplesSolicitudes() {
+  const numSolicitudes = config.numSolicitudes;
+  const intervalo = config.intervalo;
+  
   console.log(
     `Iniciando envío de ${numSolicitudes} solicitudes con intervalo de ${intervalo}ms`
   );
+  
+  sendToAllClients({
+    message: `Iniciando envío de ${numSolicitudes} solicitudes con intervalo de ${intervalo}ms`,
+    status: { type: "active", text: "Ejecutando solicitudes..." },
+  });
 
   let exitosoCount = 0;
   const resultados = [];
 
   for (let i = 0; i < numSolicitudes; i++) {
+    if (!registroActivo) {
+      sendToAllClients({ 
+        message: "Proceso cancelado por el usuario" 
+      });
+      break;
+    }
+    
     const resultado = await enviarSolicitud(i);
 
     if (resultado) {
@@ -75,70 +249,77 @@ async function enviarMultiplesSolicitudes() {
     }
 
     // Esperar el intervalo antes de la siguiente solicitud
-    if (i < numSolicitudes - 1) {
+    if (i < numSolicitudes - 1 && registroActivo) {
       await new Promise((resolve) => setTimeout(resolve, intervalo));
     }
   }
 
-  console.log(`Proceso completado. ${exitosoCount} solicitudes exitosas.`);
+  const mensaje = `Proceso completado. ${exitosoCount} de ${numSolicitudes} solicitudes exitosas.`;
+  console.log(mensaje);
+  sendToAllClients({ 
+    message: mensaje,
+    complete: true
+  });
+  
   return resultados;
 }
 
-// Función para ejecutar inmediatamente sin esperar programación
-function ejecutarAhora() {
-  console.log("Ejecutando solicitudes inmediatamente...");
-  enviarMultiplesSolicitudes()
-    .then(() => {
-      console.log("Ejecución inmediata completada");
-    })
-    .catch((err) => {
-      console.error("Error en ejecución inmediata:", err);
-    });
-}
+// Programar tarea para una fecha específica
+function programarEjecucion(fechaHora) {
+  // Si ya hay una tarea programada, cancelarla
+  if (tareaRegistro) {
+    tareaRegistro.stop();
+  }
 
-// Programar las solicitudes a las 7:00 AM
-function programarEjecucion() {
-  const [hora, minuto] = horaInicio.split(":").map(Number);
+  // Obtener componentes de la fecha
+  const minuto = fechaHora.getMinutes();
+  const hora = fechaHora.getHours();
+  const dia = fechaHora.getDate();
+  const mes = fechaHora.getMonth() + 1;
+  const diaSemana = fechaHora.getDay();
 
   // Formato cron: segundos minutos horas día-del-mes mes día-de-la-semana
-  // Días de la semana: 1-5 representa Lunes a Viernes
-  const cronExpression = `0 ${minuto} ${hora} * * 1-5`;
+  const cronExpression = `0 ${minuto} ${hora} ${dia} ${mes} ${diaSemana}`;
 
   console.log(
-    `Solicitudes programadas para ejecutarse a las ${horaInicio} de Lunes a Viernes.`
+    `Solicitud programada para: ${fechaHora.toLocaleString()} (${cronExpression})`
   );
-  console.log(`Configuración cron: ${cronExpression}`);
 
-  cron.schedule(
+  // Crear nueva tarea cron
+  tareaRegistro = cron.schedule(
     cronExpression,
     () => {
       console.log(
         `¡Es hora! Ejecutando solicitudes programadas a las ${new Date().toLocaleTimeString()}...`
       );
+      
+      registroActivo = true;
       enviarMultiplesSolicitudes()
         .then(() => {
-          console.log("Ejecución programada completada");
+          registroActivo = false;
         })
         .catch((err) => {
+          registroActivo = false;
           console.error("Error en ejecución programada:", err);
         });
     },
     {
+      scheduled: true,
       timezone: "America/Lima", // Zona horaria del Perú
     }
   );
+
+  // Iniciar la tarea
+  tareaRegistro.start();
 }
 
-// Modo de ejecución basado en argumentos
-if (process.argv.includes("--ahora")) {
-  ejecutarAhora();
-} else {
-  programarEjecucion();
-  console.log(
-    "Aplicación iniciada en modo programado. Use --ahora para ejecutar inmediatamente."
-  );
-}
+// Ruta para servir el archivo HTML principal
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
-// Mantener la aplicación en ejecución
-process.stdin.resume();
-console.log("Presione Ctrl+C para finalizar el programa.");
+// Iniciar el servidor
+app.listen(PORT, () => {
+  console.log(`Servidor iniciado en http://localhost:${PORT}`);
+  console.log("Presione Ctrl+C para finalizar el programa.");
+});
