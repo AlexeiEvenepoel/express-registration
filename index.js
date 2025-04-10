@@ -23,8 +23,8 @@ app.use(express.json());
 
 // Cargar valores iniciales desde .env
 let config = {
-  dni: process.env.DNI || "",
-  codigo: process.env.CODIGO || "",
+  dni: process.env.DNI || "72879376", // Por defecto usar DNI de Jefer
+  codigo: process.env.CODIGO || "2020101668A", // Por defecto usar código de Jefer
   numSolicitudes: parseInt(process.env.NUM_SOLICITUDES) || 10,
   intervalo: parseInt(process.env.INTERVALO_MS) || 100,
   horaInicio: process.env.HORA_INICIO || "07:00",
@@ -203,12 +203,12 @@ async function enviarSolicitud(indice) {
     return response.data;
   } catch (error) {
     console.error(`Error en solicitud ${indice + 1}:`, error.message);
-    
+
     let errorMsg = `Error en solicitud ${indice + 1}: ${error.message}`;
     if (error.response) {
       errorMsg += ` - ${JSON.stringify(error.response.data)}`;
     }
-    
+
     sendToAllClients({ message: errorMsg });
     return null;
   }
@@ -218,11 +218,11 @@ async function enviarSolicitud(indice) {
 async function enviarMultiplesSolicitudes() {
   const numSolicitudes = config.numSolicitudes;
   const intervalo = config.intervalo;
-  
+
   console.log(
     `Iniciando envío de ${numSolicitudes} solicitudes con intervalo de ${intervalo}ms`
   );
-  
+
   sendToAllClients({
     message: `Iniciando envío de ${numSolicitudes} solicitudes con intervalo de ${intervalo}ms`,
     status: { type: "active", text: "Ejecutando solicitudes..." },
@@ -233,12 +233,12 @@ async function enviarMultiplesSolicitudes() {
 
   for (let i = 0; i < numSolicitudes; i++) {
     if (!registroActivo) {
-      sendToAllClients({ 
-        message: "Proceso cancelado por el usuario" 
+      sendToAllClients({
+        message: "Proceso cancelado por el usuario",
       });
       break;
     }
-    
+
     const resultado = await enviarSolicitud(i);
 
     if (resultado) {
@@ -256,11 +256,11 @@ async function enviarMultiplesSolicitudes() {
 
   const mensaje = `Proceso completado. ${exitosoCount} de ${numSolicitudes} solicitudes exitosas.`;
   console.log(mensaje);
-  sendToAllClients({ 
+  sendToAllClients({
     message: mensaje,
-    complete: true
+    complete: true,
   });
-  
+
   return resultados;
 }
 
@@ -275,15 +275,18 @@ function programarEjecucion(fechaHora) {
   const minuto = fechaHora.getMinutes();
   const hora = fechaHora.getHours();
   const dia = fechaHora.getDate();
-  const mes = fechaHora.getMonth() + 1;
-  const diaSemana = fechaHora.getDay();
+  const mes = fechaHora.getMonth() + 1; // JavaScript meses son 0-11
+  const diaSemana = fechaHora.getDay(); // 0 = domingo, 1 = lunes, etc.
 
   // Formato cron: segundos minutos horas día-del-mes mes día-de-la-semana
-  const cronExpression = `0 ${minuto} ${hora} ${dia} ${mes} ${diaSemana}`;
+  const cronExpression = `0 ${minuto} ${hora} ${dia} ${mes} *`;
 
   console.log(
     `Solicitud programada para: ${fechaHora.toLocaleString()} (${cronExpression})`
   );
+  sendToAllClients({
+    message: `Programación confirmada en el servidor para: ${fechaHora.toLocaleString()}`,
+  });
 
   // Crear nueva tarea cron
   tareaRegistro = cron.schedule(
@@ -292,7 +295,7 @@ function programarEjecucion(fechaHora) {
       console.log(
         `¡Es hora! Ejecutando solicitudes programadas a las ${new Date().toLocaleTimeString()}...`
       );
-      
+
       registroActivo = true;
       enviarMultiplesSolicitudes()
         .then(() => {
