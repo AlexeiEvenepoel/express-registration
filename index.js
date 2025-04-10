@@ -25,7 +25,7 @@ app.use(express.json());
 let config = {
   dni: process.env.DNI || "72879376", // Por defecto usar DNI de Jefer
   codigo: process.env.CODIGO || "2020101668A", // Por defecto usar código de Jefer
-  numSolicitudes: parseInt(process.env.NUM_SOLICITUDES) || 10,
+  numSolicitudes: parseInt(process.env.NUM_SOLICITUDES) || 50,
   intervalo: parseInt(process.env.INTERVALO_MS) || 100,
   horaInicio: process.env.HORA_INICIO || "07:00",
 };
@@ -323,6 +323,10 @@ app.get("/", (req, res) => {
 
 // Iniciar el servidor
 app.listen(PORT, () => {
-  console.log(`Servidor iniciado en http://localhost:${PORT}`);
-  console.log("Presione Ctrl+C para finalizar el programa.");
+  console.log(`Servidor iniciado en el puerto ${PORT}`);
+  console.log(
+    process.env.NODE_ENV === "production"
+      ? "Ejecutando en modo producción"
+      : "Ejecutando en modo desarrollo - Presione Ctrl+C para finalizar el programa."
+  );
 });

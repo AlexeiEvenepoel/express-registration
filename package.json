@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Sistema de registro automatizado para el comedor de la UNCP",
   "main": "index.js",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "scripts": {
     "start": "node index.js",
     "now": "node index.js --ahora",
