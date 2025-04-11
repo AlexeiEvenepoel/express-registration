@@ -1,3 +1,26 @@
+/**
+ * Aplicación principal del sistema de registro automatizado
+ */
+import {
+  profiles,
+  saveConfig,
+  loadConfig,
+  determineProfile,
+} from "./utils/profiles.js";
+import {
+  runNowRequest,
+  scheduleRequest,
+  cancelSchedule,
+  setupEventSource,
+} from "./services/api-service.js";
+import {
+  initClock,
+  setStatus,
+  addToResults,
+  clearResults,
+  formatDate,
+} from "./components/ui-components.js";
+
 document.addEventListener("DOMContentLoaded", function () {
   // Referencias a elementos DOM
   const clockElement = document.getElementById("clock");
@@ -18,36 +41,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const resultsElement = document.getElementById("results");
   const clearResultsBtn = document.getElementById("clearResultsBtn");
 
-  // Perfiles predefinidos
-  const profiles = {
-    jefer: {
-      dni: "72879376",
-      codigo: "2020101668A",
-      name: "Jefer",
-    },
-    danny: {
-      dni: "75908353",
-      codigo: "2021101385B",
-      name: "Danny",
-    },
-    Alexis: {
-      dni: "73435865",
-      codigo: "2019200797H",
-      name: "Alexis",
-    },
-    // Añadir un nuevo usuario aquí
-    nuevoUsuario: {
-      dni: "12345678",
-      codigo: "2023123456X",
-      name: "Nombre del Usuario",
-    },
-    custom: {
-      dni: "",
-      codigo: "",
-      name: "Personalizado",
-    },
-  };
-
   // Estado de la aplicación
   const appState = {
     isRunning: false,
@@ -60,18 +53,18 @@ document.addEventListener("DOMContentLoaded", function () {
   scheduleDateInput.valueAsDate = today;
 
   // Inicializar reloj
-  initClock();
+  initClock(clockElement);
 
   // Cargar configuración almacenada
-  loadConfig();
+  loadSavedConfig();
 
   // Eventos de los botones
-  configForm.addEventListener("submit", saveConfig);
+  configForm.addEventListener("submit", handleSaveConfig);
   loadProfileBtn.addEventListener("click", loadSelectedProfile);
-  runNowBtn.addEventListener("click", runNow);
-  scheduleBtn.addEventListener("click", scheduleExecution);
-  stopBtn.addEventListener("click", stopExecution);
-  clearResultsBtn.addEventListener("click", clearResults);
+  runNowBtn.addEventListener("click", handleRunNow);
+  scheduleBtn.addEventListener("click", handleScheduleExecution);
+  stopBtn.addEventListener("click", handleStopExecution);
+  clearResultsBtn.addEventListener("click", () => clearResults(resultsElement));
 
   // Cargar perfil seleccionado cuando cambie el selector
   userProfileSelect.addEventListener("change", function () {
@@ -80,88 +73,42 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Función para inicializar el reloj
-  function initClock() {
-    updateClock();
-    setInterval(updateClock, 1000);
-  }
+  /**
+   * Carga configuración desde localStorage
+   */
+  function loadSavedConfig() {
+    const config = loadConfig();
+    if (config) {
+      dniInput.value = config.dni || "";
+      codigoInput.value = config.codigo || "";
+      numSolicitudesInput.value = config.numSolicitudes || 10;
+      intervaloInput.value = config.intervalo || 100;
+      horaInicioInput.value = config.horaInicio || "07:00";
 
-  // Actualizar el reloj con la hora actual
-  function updateClock() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
-    const seconds = String(now.getSeconds()).padStart(2, "0");
-    clockElement.textContent = `${hours}:${minutes}:${seconds}`;
-
-    // Si hay una programación activa, verificar si es hora de ejecutar
-    if (appState.isScheduled && appState.scheduleTime) {
-      const scheduleTime = new Date(appState.scheduleTime);
-      const currentTime = new Date();
-      currentTime.setSeconds(0, 0); // Ignorar segundos para comparar solo horas y minutos
-
-      if (scheduleTime <= currentTime) {
-        executeScheduled();
-      }
-    }
-  }
-
-  // Cargar configuración desde localStorage
-  function loadConfig() {
-    try {
-      const config = JSON.parse(localStorage.getItem("uncp-config"));
-      if (config) {
-        dniInput.value = config.dni || "";
-        codigoInput.value = config.codigo || "";
-        numSolicitudesInput.value = config.numSolicitudes || 10;
-        intervaloInput.value = config.intervalo || 100;
-        horaInicioInput.value = config.horaInicio || "07:00";
-
-        // Determinar qué perfil está cargado actualmente
-        let currentProfile = "custom";
-        if (
-          config.dni === profiles.jefer.dni &&
-          config.codigo === profiles.jefer.codigo
-        ) {
-          currentProfile = "jefer";
-        } else if (
-          config.dni === profiles.danny.dni &&
-          config.codigo === profiles.danny.codigo
-        ) {
-          currentProfile = "danny";
-        } else if (
-          config.dni === profiles.Alexis.dni &&
-          config.codigo === profiles.Alexis.codigo
-        ) {
-          currentProfile = "Alexis";
-        }
-        // Añadir condición para el nuevo usuario aquí
-        else if (
-          config.dni === profiles.nuevoUsuario.dni &&
-          config.codigo === profiles.nuevoUsuario.codigo
-        ) {
-          currentProfile = "nuevoUsuario";
-        }
-        userProfileSelect.value = currentProfile;
-      } else {
-        // Si no hay configuración almacenada, cargar el perfil por defecto (Jefer)
-        loadProfile("jefer");
-      }
-    } catch (error) {
-      console.error("Error al cargar la configuración:", error);
-      // En caso de error, cargar el perfil por defecto
+      // Determinar qué perfil está cargado actualmente
+      userProfileSelect.value = determineProfile(config.dni, config.codigo);
+    } else {
+      // Si no hay configuración almacenada, cargar el perfil por defecto (Jefer)
       loadProfile("jefer");
     }
   }
 
-  // Cargar perfil seleccionado en el dropdown
+  /**
+   * Carga el perfil seleccionado en el dropdown
+   */
   function loadSelectedProfile() {
     const selectedProfile = userProfileSelect.value;
     loadProfile(selectedProfile);
-    addToResults(`✅ Perfil de ${profiles[selectedProfile].name} cargado`);
+    addToResults(
+      resultsElement,
+      `✅ Perfil de ${profiles[selectedProfile].name} cargado`
+    );
   }
 
-  // Cargar perfil específico
+  /**
+   * Carga un perfil específico
+   * @param {string} profileName - Nombre del perfil
+   */
   function loadProfile(profileName) {
     if (profiles[profileName]) {
       dniInput.value = profiles[profileName].dni;
@@ -170,8 +117,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Guardar configuración en localStorage
-  function saveConfig(event) {
+  /**
+   * Guarda la configuración en localStorage
+   * @param {Event} event - Evento del formulario
+   */
+  function handleSaveConfig(event) {
     event.preventDefault();
 
     const config = {
@@ -182,64 +132,65 @@ document.addEventListener("DOMContentLoaded", function () {
       horaInicio: horaInicioInput.value,
     };
 
-    try {
-      localStorage.setItem("uncp-config", JSON.stringify(config));
-      addToResults("✅ Configuración guardada correctamente");
-    } catch (error) {
-      addToResults("❌ Error al guardar la configuración: " + error.message);
+    if (saveConfig(config)) {
+      addToResults(resultsElement, "✅ Configuración guardada correctamente");
+    } else {
+      addToResults(resultsElement, "❌ Error al guardar la configuración");
     }
   }
 
-  // Ejecutar solicitudes inmediatamente
-  function runNow() {
-    if (validateInputs()) {
-      setStatus("active", "Ejecutando solicitudes...");
-      appState.isRunning = true;
+  /**
+   * Ejecuta solicitudes inmediatamente
+   */
+  async function handleRunNow() {
+    if (!validateInputs()) return;
 
+    setStatus(statusElement, "active", "Ejecutando solicitudes...");
+    appState.isRunning = true;
+
+    try {
       // Obtener valores actuales
       const params = getRequestParams();
 
       // Llamada a la API para ejecutar ahora
-      fetch("/api/run-now", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(params),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          addToResults("✅ Solicitud de ejecución enviada");
+      const data = await runNowRequest(params);
 
-          if (data.success) {
-            addToResults(`📊 ${data.message || "Proceso iniciado"}`);
-          } else {
-            setStatus("error", "Error al ejecutar");
-            addToResults(`❌ Error: ${data.error || "Error desconocido"}`);
-          }
-        })
-        .catch((error) => {
-          setStatus("error", "Error de conexión");
-          addToResults(`❌ Error: ${error.message}`);
-        })
-        .finally(() => {
-          appState.isRunning = false;
-          if (!appState.isScheduled) {
-            setStatus("inactive", "Inactivo");
-          }
-        });
+      addToResults(resultsElement, "✅ Solicitud de ejecución enviada");
+
+      if (data.success) {
+        addToResults(
+          resultsElement,
+          `📊 ${data.message || "Proceso iniciado"}`
+        );
+      } else {
+        setStatus(statusElement, "error", "Error al ejecutar");
+        addToResults(
+          resultsElement,
+          `❌ Error: ${data.error || "Error desconocido"}`
+        );
+      }
+    } catch (error) {
+      setStatus(statusElement, "error", "Error de conexión");
+      addToResults(resultsElement, `❌ Error: ${error.message}`);
+    } finally {
+      appState.isRunning = false;
+      if (!appState.isScheduled) {
+        setStatus(statusElement, "inactive", "Inactivo");
+      }
     }
   }
 
-  // Programar ejecución para una fecha y hora específicas
-  function scheduleExecution() {
+  /**
+   * Programa ejecución para una fecha y hora específicas
+   */
+  async function handleScheduleExecution() {
     if (!validateInputs()) return;
 
     const horaInicio = horaInicioInput.value;
     const scheduleDate = scheduleDateInput.value;
 
     if (!horaInicio || !scheduleDate) {
-      addToResults("❌ Debe ingresar una fecha y hora válidas");
+      addToResults(resultsElement, "❌ Debe ingresar una fecha y hora válidas");
       return;
     }
 
@@ -256,6 +207,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Verificar que la fecha sea futura
     if (selectedDate < new Date()) {
       addToResults(
+        resultsElement,
         "⚠️ Advertencia: La fecha y hora seleccionada ya pasó. Seleccione una futura."
       );
       return;
@@ -265,92 +217,80 @@ document.addEventListener("DOMContentLoaded", function () {
     appState.isScheduled = true;
 
     // Mostrar la fecha y hora programadas
-    const formattedDate = selectedDate.toLocaleString("es-ES", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const formattedDate = formatDate(selectedDate);
 
-    setStatus("scheduled", "Programado");
+    setStatus(statusElement, "scheduled", "Programado");
     nextExecutionElement.textContent = `Próxima ejecución: ${formattedDate}`;
-    addToResults(`🕒 Ejecución programada para ${formattedDate}`);
+    addToResults(
+      resultsElement,
+      `🕒 Ejecución programada para ${formattedDate}`
+    );
 
-    // Guardar en el servidor
-    const params = getRequestParams();
+    try {
+      // Guardar en el servidor
+      const params = getRequestParams();
+      const data = await scheduleRequest(params, selectedDate);
 
-    fetch("/api/schedule", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...params,
-        scheduleTime: selectedDate.toISOString(),
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (!data.success) {
-          addToResults(
-            `⚠️ Advertencia: ${data.error || "Error al guardar en servidor"}`
-          );
-        }
-      })
-      .catch((error) => {
-        addToResults(`⚠️ Advertencia: ${error.message}`);
-      });
+      if (!data.success) {
+        addToResults(
+          resultsElement,
+          `⚠️ Advertencia: ${data.error || "Error al guardar en servidor"}`
+        );
+      }
+    } catch (error) {
+      addToResults(resultsElement, `⚠️ Advertencia: ${error.message}`);
+    }
   }
 
-  // Ejecutar el proceso programado
+  /**
+   * Ejecuta el proceso programado
+   */
   function executeScheduled() {
     if (appState.isScheduled) {
       appState.isScheduled = false;
       nextExecutionElement.textContent = "";
-      runNow();
+      handleRunNow();
     }
   }
 
-  // Detener la ejecución programada
-  function stopExecution() {
+  /**
+   * Detiene la ejecución programada
+   */
+  async function handleStopExecution() {
     appState.isScheduled = false;
     appState.scheduleTime = null;
 
-    setStatus("inactive", "Inactivo");
+    setStatus(statusElement, "inactive", "Inactivo");
     nextExecutionElement.textContent = "";
-    addToResults("🛑 Ejecución programada cancelada");
+    addToResults(resultsElement, "🛑 Ejecución programada cancelada");
 
-    // Cancelar en el servidor
-    fetch("/api/cancel", { method: "POST" }).catch((error) =>
-      console.error("Error al cancelar programación:", error)
-    );
-  }
-
-  // Cambiar estado visual
-  function setStatus(type, text) {
-    statusElement.textContent = text;
-    statusElement.className = "status-indicator";
-
-    if (type === "active") {
-      statusElement.classList.add("status-active");
-    } else if (type === "scheduled") {
-      statusElement.classList.add("status-scheduled");
-    } else if (type === "error") {
-      statusElement.classList.add("status-error");
+    try {
+      // Cancelar en el servidor
+      await cancelSchedule();
+    } catch (error) {
+      console.error("Error al cancelar programación:", error);
     }
   }
 
-  // Validar entradas
+  /**
+   * Validar entradas
+   * @returns {boolean} - Verdadero si las entradas son válidas
+   */
   function validateInputs() {
     if (!dniInput.value || !codigoInput.value) {
-      addToResults("❌ Debe ingresar DNI y Código de Matrícula");
+      addToResults(
+        resultsElement,
+        "❌ Debe ingresar DNI y Código de Matrícula"
+      );
       return false;
     }
     return true;
   }
 
-  // Obtener parámetros para las solicitudes
+  /**
+   * Obtener parámetros para las solicitudes
+   * @returns {Object} - Parámetros para las solicitudes
+   */
   function getRequestParams() {
     return {
       dni: dniInput.value,
@@ -361,120 +301,92 @@ document.addEventListener("DOMContentLoaded", function () {
     };
   }
 
-  // Añadir mensaje a resultados
-  function addToResults(message) {
-    const timestamp = new Date().toLocaleTimeString();
-    resultsElement.textContent = `[${timestamp}] ${message}\n${resultsElement.textContent}`;
-  }
-
-  // Limpiar resultados
-  function clearResults() {
-    resultsElement.textContent = "Los resultados se mostrarán aquí...";
-  }
-
-  // Para recibir actualizaciones del servidor (usando EventSource o WebSockets)
+  /**
+   * Configura el listener para recibir actualizaciones del servidor
+   */
   function setupServerUpdates() {
-    // Crear fuente de eventos del servidor
-    const eventSource = new EventSource("/api/events");
+    setupEventSource(
+      // Manejador de mensajes
+      (data) => {
+        // Manejar el estado inicial cuando se conecta
+        if (data.initialState) {
+          if (data.initialState.isScheduled && data.initialState.scheduleTime) {
+            // Recuperar la programación
+            const scheduledTime = new Date(data.initialState.scheduleTime);
 
-    // Escuchar eventos
-    eventSource.onmessage = function (event) {
-      const data = JSON.parse(event.data);
+            // Actualizar el estado de la aplicación
+            appState.isScheduled = true;
+            appState.scheduleTime = scheduledTime;
 
-      // Manejar el estado inicial cuando se conecta
-      if (data.initialState) {
-        if (data.initialState.isScheduled && data.initialState.scheduleTime) {
-          // Recuperar la programación
-          const scheduledTime = new Date(data.initialState.scheduleTime);
+            // Actualizar la interfaz
+            setStatus(statusElement, "scheduled", "Programado");
 
-          // Actualizar el estado de la aplicación
-          appState.isScheduled = true;
-          appState.scheduleTime = scheduledTime;
+            // Mostrar la fecha y hora programadas
+            const formattedDate = formatDate(scheduledTime);
+            nextExecutionElement.textContent = `Próxima ejecución: ${formattedDate}`;
+            addToResults(
+              resultsElement,
+              `🔄 Recuperada programación para ${formattedDate}`
+            );
 
-          // Actualizar la interfaz
-          setStatus("scheduled", "Programado");
+            // Si hay configuración, actualizarla
+            if (data.initialState.config) {
+              dniInput.value = data.initialState.config.dni;
+              codigoInput.value = data.initialState.config.codigo;
+              numSolicitudesInput.value =
+                data.initialState.config.numSolicitudes;
+              intervaloInput.value = data.initialState.config.intervalo;
+              horaInicioInput.value = data.initialState.config.horaInicio;
 
-          // Mostrar la fecha y hora programadas
-          const formattedDate = scheduledTime.toLocaleString("es-ES", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-
-          nextExecutionElement.textContent = `Próxima ejecución: ${formattedDate}`;
-          addToResults(`🔄 Recuperada programación para ${formattedDate}`);
-
-          // Si hay configuración, actualizarla
-          if (data.initialState.config) {
-            dniInput.value = data.initialState.config.dni;
-            codigoInput.value = data.initialState.config.codigo;
-            numSolicitudesInput.value = data.initialState.config.numSolicitudes;
-            intervaloInput.value = data.initialState.config.intervalo;
-            horaInicioInput.value = data.initialState.config.horaInicio;
-
-            // Determinar perfil actual
-            updateProfileSelector();
+              // Determinar perfil actual
+              updateProfileSelector();
+            }
           }
         }
-      }
 
-      // Procesar mensaje normal
-      if (data.message) {
-        addToResults(data.message);
-      }
-
-      if (data.status) {
-        setStatus(data.status.type, data.status.text);
-      }
-
-      if (data.complete) {
-        if (!appState.isScheduled) {
-          setStatus("inactive", "Inactivo");
+        // Procesar mensaje normal
+        if (data.message) {
+          addToResults(resultsElement, data.message);
         }
-      }
-    };
 
-    // Manejar errores
-    eventSource.onerror = function () {
-      eventSource.close();
-      setTimeout(setupServerUpdates, 5000); // Reintentar cada 5 segundos
-    };
+        if (data.status) {
+          setStatus(statusElement, data.status.type, data.status.text);
+        }
+
+        if (data.complete) {
+          if (!appState.isScheduled) {
+            setStatus(statusElement, "inactive", "Inactivo");
+          }
+        }
+      },
+      // Manejador de errores
+      () => {
+        // Reintentar cada 5 segundos
+        setTimeout(setupServerUpdates, 5000);
+      }
+    );
   }
 
-  // Función para actualizar el selector de perfiles basado en el DNI y código actual
+  /**
+   * Actualiza el selector de perfiles basado en el DNI y código actual
+   */
   function updateProfileSelector() {
     const currentDni = dniInput.value;
     const currentCodigo = codigoInput.value;
-
-    // Determinar qué perfil está cargado actualmente
-    let currentProfile = "custom";
-
-    if (
-      currentDni === profiles.jefer.dni &&
-      currentCodigo === profiles.jefer.codigo
-    ) {
-      currentProfile = "jefer";
-    } else if (
-      currentDni === profiles.danny.dni &&
-      currentCodigo === profiles.danny.codigo
-    ) {
-      currentProfile = "danny";
-    } else if (
-      currentDni === profiles.Alexis.dni &&
-      currentCodigo === profiles.Alexis.codigo
-    ) {
-      currentProfile = "Alexis";
-    } else if (
-      currentDni === profiles.nuevoUsuario.dni &&
-      currentCodigo === profiles.nuevoUsuario.codigo
-    ) {
-      currentProfile = "nuevoUsuario";
-    }
-
-    userProfileSelect.value = currentProfile;
+    userProfileSelect.value = determineProfile(currentDni, currentCodigo);
   }
+
+  // Verificar si hay programación activa en cada actualización del reloj
+  setInterval(() => {
+    if (appState.isScheduled && appState.scheduleTime) {
+      const now = new Date();
+      now.setSeconds(0, 0); // Ignorar segundos para comparar solo horas y minutos
+
+      if (appState.scheduleTime <= now) {
+        executeScheduled();
+      }
+    }
+  }, 1000);
 
   // Iniciar escucha de eventos del servidor
   setupServerUpdates();
