@@ -33,6 +33,21 @@ import {
   renderUserList,
 } from "./components/ui-components.js";
 
+console.log("Perfiles disponibles:", profiles);
+console.log("Lista de perfiles:", profilesList);
+
+// Verificación adicional para asegurar que los perfiles se cargan
+window.addEventListener("load", () => {
+  console.log("Perfiles después de cargar la página:", profiles);
+  console.log("Lista de perfiles después de cargar:", profilesList);
+
+  // Intenta renderizar directamente
+  console.log(
+    "Intentando renderizado directo con:",
+    Object.values(profiles).filter((p) => p.userId !== "custom")
+  );
+});
+
 document.addEventListener("DOMContentLoaded", function () {
   // Referencias a elementos DOM
   const clockElement = document.getElementById("clock");
@@ -41,6 +56,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const horaInicioInput = document.getElementById("horaInicio");
   const scheduleDateInput = document.getElementById("scheduleDateInput");
   const configForm = document.getElementById("configForm");
+  const configBody = document.getElementById("configBody");
+  const configToggle = document.getElementById("configToggle");
   const runNowBtn = document.getElementById("runNowBtn");
   const scheduleBtn = document.getElementById("scheduleBtn");
   const stopBtn = document.getElementById("stopBtn");
@@ -50,6 +67,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const clearResultsBtn = document.getElementById("clearResultsBtn");
   const userListContainer = document.getElementById("userList");
   const customUserForm = document.getElementById("customUserForm");
+  const addUserBtn = document.getElementById("addUserBtn");
+  const addUserModal = document.getElementById("addUserModal");
+  const runBadge = document.getElementById("runBadge");
 
   // Estado de la aplicación
   const appState = {
@@ -68,7 +88,47 @@ document.addEventListener("DOMContentLoaded", function () {
   // Inicializar reloj
   initClock(clockElement);
 
-  // Cargar configuración guardada
+  // Manejar la expansión/colapso de la configuración aquí, antes de llamar a loadSavedConfig
+  if (configToggle && configBody) {
+    // Expandir por defecto al cargar la página
+    setTimeout(() => {
+      configBody.style.maxHeight = configBody.scrollHeight + "px";
+    }, 100);
+
+    configToggle.addEventListener("click", function () {
+      console.log("Toggle clicked");
+      const isExpanded = configBody.classList.contains("expanded");
+
+      if (isExpanded) {
+        configBody.style.maxHeight = "0px";
+        setTimeout(() => {
+          configBody.classList.remove("expanded");
+        }, 10);
+      } else {
+        configBody.classList.add("expanded");
+        configBody.style.maxHeight = configBody.scrollHeight + "px";
+      }
+
+      const icon = configToggle.querySelector("i");
+      if (icon) {
+        icon.classList.toggle("collapsed");
+      }
+    });
+  } else {
+    console.error("No se encontraron elementos de configuración");
+  }
+
+  // Actualizar el badge del botón Run Now
+  if (runBadge) {
+    numSolicitudesInput.addEventListener("input", function () {
+      runBadge.textContent = this.value;
+    });
+
+    // Inicializar el badge con el valor inicial
+    runBadge.textContent = numSolicitudesInput.value;
+  }
+
+  // Ahora cargar configuración guardada después de inicializar todas las referencias
   loadSavedConfig();
 
   // Eventos de los botones
@@ -79,7 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
   clearResultsBtn.addEventListener("click", () => clearResults(resultsElement));
 
   // Manejar el formulario de usuario personalizado
-  customUserForm.addEventListener("submit", async (event) => {
+  customUserForm.addEventListener("submit", async function (event) {
     event.preventDefault();
 
     const userData = {
@@ -106,22 +166,55 @@ document.addEventListener("DOMContentLoaded", function () {
         `✅ Usuario personalizado añadido: ${userData.name}`
       );
 
-      // Recargar lista de usuarios
-      renderUserList(
-        userListContainer,
-        [...profilesList, ...Object.values(loadCustomUsers())],
-        appState.selectedUsers,
-        appState.userStates,
-        handleUserSelect
-      );
+      // Cerrar modal
+      const modal = bootstrap.Modal.getInstance(addUserModal);
+      if (modal) {
+        modal.hide();
+      }
 
       // Limpiar formulario
       customUserForm.reset();
+
+      // Recargar lista de usuarios con animación para nuevos usuarios
+      const customUsers = loadCustomUsers();
+      const allProfiles = [...profilesList, ...Object.values(customUsers)];
+
+      renderUserList(
+        userListContainer,
+        allProfiles,
+        appState.selectedUsers,
+        appState.userStates,
+        handleUserSelect,
+        userId // Pasar el ID del nuevo usuario para resaltarlo
+      );
     } catch (error) {
+      // Mostrar error en el modal en lugar de los resultados
+      const errorFeedback = document.createElement("div");
+      errorFeedback.className = "alert alert-danger mt-3";
+      errorFeedback.textContent = error.message;
+
+      // Eliminar cualquier error existente
+      const existingError = customUserForm.querySelector(".alert");
+      if (existingError) {
+        existingError.remove();
+      }
+
+      customUserForm.appendChild(errorFeedback);
+
+      // También registrar en los resultados
       addToResults(
         resultsElement,
         `❌ Error al añadir usuario: ${error.message}`
       );
+    }
+  });
+
+  // Limpiar formulario cuando se cierre el modal
+  addUserModal.addEventListener("hidden.bs.modal", function () {
+    customUserForm.reset();
+    const existingError = customUserForm.querySelector(".alert");
+    if (existingError) {
+      existingError.remove();
     }
   });
 
@@ -137,24 +230,44 @@ document.addEventListener("DOMContentLoaded", function () {
     intervaloInput.value = globalConfig.intervalo || 100;
     horaInicioInput.value = globalConfig.horaInicio || "07:00";
 
+    // Actualizar badge
+    if (runBadge) {
+      runBadge.textContent = numSolicitudesInput.value;
+    }
+
     // Cargar configuraciones de usuario
     appState.userConfigs = initializeUserConfigs();
 
     // Cargar selección de usuarios
     appState.selectedUsers = loadSelectedUsers();
 
-    // Cargar usuarios personalizados
+    // Cargar usuarios personalizados y mostrar lista combinada
     const customUsers = loadCustomUsers();
-    const allProfiles = [...profilesList, ...Object.values(customUsers)];
+
+    // ES IMPORTANTE: Usar Object.values(profiles) en lugar de profilesList
+    const allProfiles = [
+      ...Object.values(profiles),
+      ...Object.values(customUsers),
+    ];
+    console.log("Total perfiles combinados:", allProfiles.length);
+
+    // Renderizar usuarios, excluyendo el perfil "custom" (plantilla)
+    const usableProfiles = allProfiles.filter((p) => p.userId !== "custom");
+    console.log("Perfiles a renderizar:", usableProfiles.length);
 
     // Renderizar lista de usuarios incluyendo los personalizados
     renderUserList(
       userListContainer,
-      allProfiles,
+      usableProfiles,
       appState.selectedUsers,
       appState.userStates,
       handleUserSelect
     );
+
+    // Expandir configuración por defecto
+    if (configBody) {
+      configBody.classList.add("expanded");
+    }
   }
 
   /**

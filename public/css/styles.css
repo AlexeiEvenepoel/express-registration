@@ -288,10 +288,27 @@ input[type="number"].form-control {
 
 /* Lista de usuarios mejorada */
 .user-list-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 15px;
-  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 15px;
+  overflow-y: auto;
+  max-height: 500px;
+  padding-right: 5px;
+}
+
+.user-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.user-list-container::-webkit-scrollbar-thumb {
+  background-color: var(--gray);
+  border-radius: 10px;
+}
+
+.user-list-container::-webkit-scrollbar-track {
+  background-color: #f0f0f0;
+  border-radius: 10px;
 }
 
 .select-all-container {
@@ -314,16 +331,11 @@ input[type="number"].form-control {
 }
 
 .user-item {
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  border: 1px solid var(--gray);
-  border-radius: var(--border-radius);
-  background-color: #fff;
-  position: relative;
-  transition: var(--transition);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-height: 100px;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
 }
 
 .user-item:hover {
@@ -332,7 +344,7 @@ input[type="number"].form-control {
 }
 
 .user-item.selected {
-  border-color: var(--primary);
+  border-left: 3px solid var(--primary);
   background-color: rgba(13, 110, 253, 0.03);
 }
 
@@ -402,6 +414,10 @@ input[type="number"].form-control {
 .user-item .status-error {
   background-color: var(--danger-light);
   color: var(--danger);
+}
+
+.user-item.new-user {
+  animation: fadeInUp 0.4s ease-out forwards;
 }
 
 .delete-user-btn {
@@ -489,7 +505,7 @@ input[type="number"].form-control {
   }
 
   .user-list-container {
-    grid-template-columns: 1fr;
+    max-height: 300px;
   }
 
   .results-container {
@@ -520,6 +536,17 @@ input[type="number"].form-control {
   animation: pulse 1.5s infinite;
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Tooltips */
 .tooltip {
   position: relative;
@@ -538,4 +565,276 @@ input[type="number"].form-control {
   font-size: 12px;
   white-space: nowrap;
   z-index: 10;
+}
+
+/* Estilos para el panel de configuración compacto */
+.config-compact {
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--gray);
+  padding-bottom: 1.5rem;
+}
+
+.config-header {
+  cursor: pointer;
+  padding: 10px 15px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.config-header:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.config-header h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.config-header h4 i {
+  margin-right: 0.5rem;
+  transition: transform 0.3s ease;
+}
+
+.config-header h4 i.collapsed {
+  transform: rotate(-90deg);
+}
+
+.config-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding: 0 10px;
+}
+
+.config-body.expanded {
+  max-height: 300px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+/* Botón flotante para guardar la configuración */
+.config-save-btn {
+  position: absolute;
+  right: 20px;
+  top: -15px;
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  overflow: hidden;
+  background-color: var(--primary);
+}
+
+.config-save-btn i {
+  font-size: 1rem;
+  color: white;
+}
+
+.config-save-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Dropdown para configuración rápida */
+.action-config-menu {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.action-config-toggle {
+  background-color: var(--light);
+  border: 1px solid var(--gray);
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.action-config-toggle::after {
+  content: "\f107";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  transition: transform 0.2s ease;
+}
+
+.action-config-toggle.active::after {
+  transform: rotate(180deg);
+}
+
+.action-config-content {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid var(--gray);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  padding: 1rem;
+  z-index: 10;
+  display: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-config-content.show {
+  display: block;
+}
+
+/* Botones de acciones con badges */
+.action-btn {
+  position: relative;
+  overflow: visible !important;
+}
+
+.action-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: var(--info);
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+/* Mejora para el FAB de acciones */
+.action-fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--success);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.action-fab:hover {
+  transform: scale(1.1);
+}
+
+.action-fab i {
+  font-size: 1.5rem;
+}
+
+.action-menu {
+  position: fixed;
+  bottom: 7rem;
+  right: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  transform: translateY(20px);
+}
+
+.action-menu.show {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
+}
+
+.action-menu-item {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.action-menu-item:hover {
+  transform: scale(1.1);
+}
+
+.action-menu-item span {
+  position: absolute;
+  right: 60px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.action-menu-item:hover span {
+  opacity: 1;
+}
+
+/* Equal height cards */
+.card.h-100 {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card.h-100 .card-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Modal improvements */
+.modal-content {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border-radius: 12px 12px 0 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Add user button in header */
+.card-header .btn-light {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.card-header .btn-light:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Agregar en public/css/styles.css: asegurar que el botón no tenga elementos extra */
+.add-user-btn {
+  box-shadow: none !important;
+}
+
+.add-user-btn::after,
+.add-user-btn::before {
+  display: none !important;
 }

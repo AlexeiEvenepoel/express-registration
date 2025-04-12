@@ -21,6 +21,11 @@ export function updateClock(clockElement) {
  * @returns {number} - ID del intervalo para poder cancelarlo si es necesario
  */
 export function initClock(clockElement) {
+  if (!clockElement) {
+    console.error("Elemento del reloj no encontrado");
+    return null;
+  }
+
   updateClock(clockElement);
   return setInterval(() => updateClock(clockElement), 1000);
 }
