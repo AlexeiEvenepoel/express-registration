@@ -125,13 +125,29 @@ exports.schedule = (req, res) => {
       });
     }
 
-    // Actualizar configuraciones para cada usuario
+    // Parsear explícitamente los valores numéricos
+    const numSolicitudes = parseInt(globalConfig.numSolicitudes, 10) || 10;
+    const intervalo = parseInt(globalConfig.intervalo, 10) || 100;
+
+    console.log("Programando con configuración:", {
+      numSolicitudes,
+      intervalo,
+      scheduleTime,
+    });
+
+    // Actualizar configuraciones para cada usuario seleccionado
     selectedUsers.forEach((userId) => {
       const userConfig = {
-        ...globalConfig, // Configuración global (intervalo, numSolicitudes)
-        ...((userConfigs && userConfigs[userId]) || {}), // Configuración específica del usuario (dni, codigo)
+        ...((userConfigs && userConfigs[userId]) || {}), // Datos específicos del usuario (dni, codigo)
+        numSolicitudes: numSolicitudes, // Usar valores globales parseados
+        intervalo: intervalo,
+        horaInicio: globalConfig.horaInicio,
       };
 
+      console.log(
+        `Actualizando configuración para programación de ${userId}:`,
+        userConfig
+      );
       registrationService.updateConfig(userId, userConfig);
     });
 

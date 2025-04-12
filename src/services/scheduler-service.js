@@ -62,6 +62,13 @@ function programarEjecucion(userIds, fechaHora) {
 
   // Programar para cada usuario
   userIds.forEach((userId) => {
+    // Verificar la configuración actual antes de programar
+    const userConfig = registrationService.getConfig(userId);
+    console.log(
+      `Programando para usuario ${userId} con configuración:`,
+      userConfig
+    );
+
     // Si ya hay una tarea programada para este usuario, cancelarla
     if (tareasRegistro.has(userId)) {
       tareasRegistro.get(userId).stop();
@@ -97,6 +104,15 @@ function programarEjecucion(userIds, fechaHora) {
           ", "
         )}`
       );
+
+      // Log de las configuraciones justo antes de ejecutar
+      userIds.forEach((userId) => {
+        const config = registrationService.getConfig(userId);
+        console.log(
+          `Configuración para ejecución programada de ${userId}:`,
+          config
+        );
+      });
 
       registrationService
         .enviarMultiplesSolicitudes(userIds)

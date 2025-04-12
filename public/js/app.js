@@ -275,12 +275,17 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
     try {
-      // Obtener configuración global
+      // Obtener configuración global con valores numéricos explícitos
       const globalConfig = {
-        numSolicitudes: parseInt(numSolicitudesInput.value),
-        intervalo: parseInt(intervaloInput.value),
+        numSolicitudes: parseInt(numSolicitudesInput.value, 10),
+        intervalo: parseInt(intervaloInput.value, 10),
         horaInicio: horaInicioInput.value,
       };
+
+      // Primero guardar la configuración antes de programar
+      await apiSaveUserConfigs(appState.userConfigs, globalConfig);
+
+      console.log("Programando con config global:", globalConfig);
 
       // Guardar en el servidor
       const data = await scheduleRequest(
