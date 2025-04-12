@@ -18,13 +18,19 @@ router.get("/events", (req, res) => {
   });
 });
 
-// Endpoint para ejecutar solicitudes inmediatamente
+// Endpoint para ejecutar solicitudes inmediatamente con usuarios seleccionados
 router.post("/run-now", registrationController.runNow);
 
-// Endpoint para programar solicitudes
+// Endpoint para programar solicitudes para usuarios seleccionados
 router.post("/schedule", registrationController.schedule);
 
-// Endpoint para cancelar programación
+// Endpoint para cancelar programación de usuarios seleccionados
 router.post("/cancel", registrationController.cancel);
+
+// Nuevo endpoint para detener procesos en ejecución
+router.post("/stop", registrationController.stop);
+
+// Nuevo endpoint para guardar configuraciones de usuarios
+router.post("/save-configs", registrationController.saveUserConfigs);
 
 module.exports = router;

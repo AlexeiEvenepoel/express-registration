@@ -3,35 +3,40 @@
  */
 import {
   profiles,
-  saveConfig,
-  loadConfig,
-  determineProfile,
+  profilesList,
+  saveGlobalConfig,
+  loadGlobalConfig,
+  saveUserConfigs,
+  loadUserConfigs,
+  saveSelectedUsers,
+  loadSelectedUsers,
+  initializeUserConfigs,
 } from "./utils/profiles.js";
 import {
   runNowRequest,
   scheduleRequest,
   cancelSchedule,
+  stopExecution,
+  saveUserConfigs as apiSaveUserConfigs,
   setupEventSource,
 } from "./services/api-service.js";
 import {
   initClock,
   setStatus,
+  setUserStatus,
   addToResults,
   clearResults,
   formatDate,
+  renderUserList,
 } from "./components/ui-components.js";
 
 document.addEventListener("DOMContentLoaded", function () {
   // Referencias a elementos DOM
   const clockElement = document.getElementById("clock");
-  const dniInput = document.getElementById("dni");
-  const codigoInput = document.getElementById("codigo");
   const numSolicitudesInput = document.getElementById("numSolicitudes");
   const intervaloInput = document.getElementById("intervalo");
   const horaInicioInput = document.getElementById("horaInicio");
   const scheduleDateInput = document.getElementById("scheduleDateInput");
-  const userProfileSelect = document.getElementById("userProfile");
-  const loadProfileBtn = document.getElementById("loadProfileBtn");
   const configForm = document.getElementById("configForm");
   const runNowBtn = document.getElementById("runNowBtn");
   const scheduleBtn = document.getElementById("scheduleBtn");
@@ -40,12 +45,16 @@ document.addEventListener("DOMContentLoaded", function () {
   const nextExecutionElement = document.getElementById("nextExecution");
   const resultsElement = document.getElementById("results");
   const clearResultsBtn = document.getElementById("clearResultsBtn");
+  const userListContainer = document.getElementById("userList");
 
   // Estado de la aplicación
   const appState = {
     isRunning: false,
     isScheduled: false,
     scheduleTime: null,
+    selectedUsers: [],
+    userConfigs: {},
+    userStates: {},
   };
 
   // Establecer fecha de hoy en el selector de fecha
@@ -55,107 +64,148 @@ document.addEventListener("DOMContentLoaded", function () {
   // Inicializar reloj
   initClock(clockElement);
 
-  // Cargar configuración almacenada
+  // Cargar configuración guardada
   loadSavedConfig();
 
   // Eventos de los botones
   configForm.addEventListener("submit", handleSaveConfig);
-  loadProfileBtn.addEventListener("click", loadSelectedProfile);
   runNowBtn.addEventListener("click", handleRunNow);
   scheduleBtn.addEventListener("click", handleScheduleExecution);
   stopBtn.addEventListener("click", handleStopExecution);
   clearResultsBtn.addEventListener("click", () => clearResults(resultsElement));
 
-  // Cargar perfil seleccionado cuando cambie el selector
-  userProfileSelect.addEventListener("change", function () {
-    if (this.value !== "custom") {
-      loadProfile(this.value);
-    }
-  });
-
   /**
    * Carga configuración desde localStorage
    */
   function loadSavedConfig() {
-    const config = loadConfig();
-    if (config) {
-      dniInput.value = config.dni || "";
-      codigoInput.value = config.codigo || "";
-      numSolicitudesInput.value = config.numSolicitudes || 10;
-      intervaloInput.value = config.intervalo || 100;
-      horaInicioInput.value = config.horaInicio || "07:00";
+    // Cargar configuración global
+    const globalConfig = loadGlobalConfig();
 
-      // Determinar qué perfil está cargado actualmente
-      userProfileSelect.value = determineProfile(config.dni, config.codigo);
-    } else {
-      // Si no hay configuración almacenada, cargar el perfil por defecto (Jefer)
-      loadProfile("jefer");
-    }
-  }
+    // Cargar valores globales
+    numSolicitudesInput.value = globalConfig.numSolicitudes || 10;
+    intervaloInput.value = globalConfig.intervalo || 100;
+    horaInicioInput.value = globalConfig.horaInicio || "07:00";
 
-  /**
-   * Carga el perfil seleccionado en el dropdown
-   */
-  function loadSelectedProfile() {
-    const selectedProfile = userProfileSelect.value;
-    loadProfile(selectedProfile);
-    addToResults(
-      resultsElement,
-      `✅ Perfil de ${profiles[selectedProfile].name} cargado`
+    // Cargar configuraciones de usuario
+    appState.userConfigs = initializeUserConfigs();
+
+    // Cargar selección de usuarios
+    appState.selectedUsers = loadSelectedUsers();
+
+    // Renderizar lista de usuarios
+    renderUserList(
+      userListContainer,
+      profilesList,
+      appState.selectedUsers,
+      appState.userStates,
+      handleUserSelect
     );
   }
 
   /**
-   * Carga un perfil específico
-   * @param {string} profileName - Nombre del perfil
+   * Maneja la selección de un usuario
+   * @param {string} userId - ID del usuario
+   * @param {boolean} isSelected - Si está seleccionado
    */
-  function loadProfile(profileName) {
-    if (profiles[profileName]) {
-      dniInput.value = profiles[profileName].dni;
-      codigoInput.value = profiles[profileName].codigo;
-      userProfileSelect.value = profileName;
+  function handleUserSelect(userId, isSelected) {
+    if (isSelected && !appState.selectedUsers.includes(userId)) {
+      appState.selectedUsers.push(userId);
+    } else if (!isSelected) {
+      appState.selectedUsers = appState.selectedUsers.filter(
+        (id) => id !== userId
+      );
     }
+
+    // Guardar usuarios seleccionados
+    saveSelectedUsers(appState.selectedUsers);
   }
 
   /**
-   * Guarda la configuración en localStorage
+   * Guarda la configuración global en localStorage
    * @param {Event} event - Evento del formulario
    */
   function handleSaveConfig(event) {
     event.preventDefault();
 
-    const config = {
-      dni: dniInput.value,
-      codigo: codigoInput.value,
-      numSolicitudes: numSolicitudesInput.value,
-      intervalo: intervaloInput.value,
+    const globalConfig = {
+      numSolicitudes: parseInt(numSolicitudesInput.value, 10),
+      intervalo: parseInt(intervaloInput.value, 10),
       horaInicio: horaInicioInput.value,
     };
 
-    if (saveConfig(config)) {
-      addToResults(resultsElement, "✅ Configuración guardada correctamente");
+    console.log("Guardando configuración global:", globalConfig);
+
+    // Guardar configuración global
+    if (saveGlobalConfig(globalConfig)) {
+      addToResults(
+        resultsElement,
+        `✅ Configuración global guardada correctamente: ${globalConfig.numSolicitudes} solicitudes, ${globalConfig.intervalo}ms`
+      );
+
+      // Guardar configuraciones en el servidor
+      apiSaveUserConfigs(appState.userConfigs, globalConfig)
+        .then((response) => {
+          if (response.success) {
+            console.log(
+              "Configuración sincronizada con el servidor:",
+              response
+            );
+            addToResults(
+              resultsElement,
+              "✅ Configuraciones sincronizadas con el servidor"
+            );
+          }
+        })
+        .catch((error) => {
+          addToResults(
+            resultsElement,
+            `❌ Error al sincronizar con el servidor: ${error.message}`
+          );
+        });
     } else {
-      addToResults(resultsElement, "❌ Error al guardar la configuración");
+      addToResults(
+        resultsElement,
+        "❌ Error al guardar la configuración global"
+      );
     }
   }
 
   /**
-   * Ejecuta solicitudes inmediatamente
+   * Ejecuta solicitudes inmediatamente para los usuarios seleccionados
    */
   async function handleRunNow() {
-    if (!validateInputs()) return;
+    if (appState.selectedUsers.length === 0) {
+      addToResults(resultsElement, "❌ Debe seleccionar al menos un usuario");
+      return;
+    }
 
     setStatus(statusElement, "active", "Ejecutando solicitudes...");
     appState.isRunning = true;
 
     try {
-      // Obtener valores actuales
-      const params = getRequestParams();
+      // Obtener configuración global y asegurarse que los valores sean números
+      const globalConfig = {
+        numSolicitudes: parseInt(numSolicitudesInput.value, 10),
+        intervalo: parseInt(intervaloInput.value, 10),
+        horaInicio: horaInicioInput.value,
+      };
+
+      // Primero guardar la configuración antes de ejecutar
+      await apiSaveUserConfigs(appState.userConfigs, globalConfig);
 
       // Llamada a la API para ejecutar ahora
-      const data = await runNowRequest(params);
+      const data = await runNowRequest(
+        appState.selectedUsers,
+        globalConfig,
+        appState.userConfigs
+      );
 
-      addToResults(resultsElement, "✅ Solicitud de ejecución enviada");
+      addToResults(
+        resultsElement,
+        `✅ Solicitud de ejecución enviada para ${
+          appState.selectedUsers.length
+        } usuarios: ${appState.selectedUsers.join(", ")}`
+      );
 
       if (data.success) {
         addToResults(
@@ -172,19 +222,17 @@ document.addEventListener("DOMContentLoaded", function () {
     } catch (error) {
       setStatus(statusElement, "error", "Error de conexión");
       addToResults(resultsElement, `❌ Error: ${error.message}`);
-    } finally {
-      appState.isRunning = false;
-      if (!appState.isScheduled) {
-        setStatus(statusElement, "inactive", "Inactivo");
-      }
     }
   }
 
   /**
-   * Programa ejecución para una fecha y hora específicas
+   * Programa ejecución para usuarios seleccionados en una fecha y hora específicas
    */
   async function handleScheduleExecution() {
-    if (!validateInputs()) return;
+    if (appState.selectedUsers.length === 0) {
+      addToResults(resultsElement, "❌ Debe seleccionar al menos un usuario");
+      return;
+    }
 
     const horaInicio = horaInicioInput.value;
     const scheduleDate = scheduleDateInput.value;
@@ -223,13 +271,24 @@ document.addEventListener("DOMContentLoaded", function () {
     nextExecutionElement.textContent = `Próxima ejecución: ${formattedDate}`;
     addToResults(
       resultsElement,
-      `🕒 Ejecución programada para ${formattedDate}`
+      `🕒 Ejecución programada para ${appState.selectedUsers.length} usuarios a las ${formattedDate}`
     );
 
     try {
+      // Obtener configuración global
+      const globalConfig = {
+        numSolicitudes: parseInt(numSolicitudesInput.value),
+        intervalo: parseInt(intervaloInput.value),
+        horaInicio: horaInicioInput.value,
+      };
+
       // Guardar en el servidor
-      const params = getRequestParams();
-      const data = await scheduleRequest(params, selectedDate);
+      const data = await scheduleRequest(
+        appState.selectedUsers,
+        globalConfig,
+        appState.userConfigs,
+        selectedDate
+      );
 
       if (!data.success) {
         addToResults(
@@ -243,62 +302,53 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /**
-   * Ejecuta el proceso programado
-   */
-  function executeScheduled() {
-    if (appState.isScheduled) {
-      appState.isScheduled = false;
-      nextExecutionElement.textContent = "";
-      handleRunNow();
-    }
-  }
-
-  /**
-   * Detiene la ejecución programada
+   * Detiene la ejecución programada o en curso
    */
   async function handleStopExecution() {
-    appState.isScheduled = false;
-    appState.scheduleTime = null;
-
-    setStatus(statusElement, "inactive", "Inactivo");
-    nextExecutionElement.textContent = "";
-    addToResults(resultsElement, "🛑 Ejecución programada cancelada");
+    if (appState.selectedUsers.length === 0) {
+      addToResults(
+        resultsElement,
+        "❌ Debe seleccionar al menos un usuario para detener"
+      );
+      return;
+    }
 
     try {
       // Cancelar en el servidor
-      await cancelSchedule();
+      const response = await stopExecution(appState.selectedUsers);
+
+      if (response.success) {
+        setStatus(statusElement, "inactive", "Inactivo");
+        nextExecutionElement.textContent = "";
+
+        addToResults(
+          resultsElement,
+          `🛑 Ejecución detenida para ${
+            appState.selectedUsers.length
+          } usuarios: ${appState.selectedUsers.join(", ")}`
+        );
+
+        // Si había una programación, cancelarla también
+        if (appState.isScheduled) {
+          const cancelResponse = await cancelSchedule(appState.selectedUsers);
+          if (cancelResponse.success) {
+            appState.isScheduled = false;
+            appState.scheduleTime = null;
+            addToResults(
+              resultsElement,
+              "🛑 Programación también ha sido cancelada"
+            );
+          }
+        }
+      } else {
+        addToResults(
+          resultsElement,
+          `⚠️ ${response.message || "No se pudo detener la ejecución"}`
+        );
+      }
     } catch (error) {
-      console.error("Error al cancelar programación:", error);
+      addToResults(resultsElement, `❌ Error al detener: ${error.message}`);
     }
-  }
-
-  /**
-   * Validar entradas
-   * @returns {boolean} - Verdadero si las entradas son válidas
-   */
-  function validateInputs() {
-    if (!dniInput.value || !codigoInput.value) {
-      addToResults(
-        resultsElement,
-        "❌ Debe ingresar DNI y Código de Matrícula"
-      );
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Obtener parámetros para las solicitudes
-   * @returns {Object} - Parámetros para las solicitudes
-   */
-  function getRequestParams() {
-    return {
-      dni: dniInput.value,
-      codigo: codigoInput.value,
-      numSolicitudes: parseInt(numSolicitudesInput.value),
-      intervalo: parseInt(intervaloInput.value),
-      horaInicio: horaInicioInput.value,
-    };
   }
 
   /**
@@ -310,37 +360,66 @@ document.addEventListener("DOMContentLoaded", function () {
       (data) => {
         // Manejar el estado inicial cuando se conecta
         if (data.initialState) {
-          if (data.initialState.isScheduled && data.initialState.scheduleTime) {
-            // Recuperar la programación
-            const scheduledTime = new Date(data.initialState.scheduleTime);
+          // Recuperar configuraciones de usuarios del servidor si están disponibles
+          if (data.initialState.usersConfig) {
+            appState.userConfigs = {
+              ...appState.userConfigs,
+              ...data.initialState.usersConfig,
+            };
 
-            // Actualizar el estado de la aplicación
-            appState.isScheduled = true;
-            appState.scheduleTime = scheduledTime;
+            // Guardar localmente
+            saveUserConfigs(appState.userConfigs);
+          }
 
-            // Actualizar la interfaz
-            setStatus(statusElement, "scheduled", "Programado");
+          // Recuperar usuarios programados
+          if (
+            data.initialState.scheduledUsers &&
+            data.initialState.scheduledUsers.length > 0
+          ) {
+            const scheduledUsers = data.initialState.scheduledUsers;
 
-            // Mostrar la fecha y hora programadas
-            const formattedDate = formatDate(scheduledTime);
-            nextExecutionElement.textContent = `Próxima ejecución: ${formattedDate}`;
-            addToResults(
-              resultsElement,
-              `🔄 Recuperada programación para ${formattedDate}`
-            );
+            // Actualizar estados de los usuarios programados
+            const scheduleInfo = data.initialState.scheduleInfo || {};
+            let scheduleTimeStr = null;
 
-            // Si hay configuración, actualizarla
-            if (data.initialState.config) {
-              dniInput.value = data.initialState.config.dni;
-              codigoInput.value = data.initialState.config.codigo;
-              numSolicitudesInput.value =
-                data.initialState.config.numSolicitudes;
-              intervaloInput.value = data.initialState.config.intervalo;
-              horaInicioInput.value = data.initialState.config.horaInicio;
+            scheduledUsers.forEach((userId) => {
+              if (scheduleInfo[userId]) {
+                const scheduleTime = new Date(
+                  scheduleInfo[userId].scheduleTime
+                );
+                scheduleTimeStr = scheduleTimeStr || scheduleTime;
 
-              // Determinar perfil actual
-              updateProfileSelector();
+                // Actualizar estado del usuario
+                appState.userStates[userId] = {
+                  type: "scheduled",
+                  text: `Programado para: ${formatDate(scheduleTime)}`,
+                };
+              }
+            });
+
+            // Si hay al menos un usuario programado, actualizar el estado general
+            if (scheduleTimeStr) {
+              appState.isScheduled = true;
+              appState.scheduleTime = scheduleTimeStr;
+              setStatus(statusElement, "scheduled", "Programado");
+              nextExecutionElement.textContent = `Próxima ejecución: ${formatDate(
+                scheduleTimeStr
+              )}`;
+
+              addToResults(
+                resultsElement,
+                `🔄 Recuperada programación para ${scheduledUsers.length} usuarios`
+              );
             }
+
+            // Re-renderizar lista de usuarios con sus estados
+            renderUserList(
+              userListContainer,
+              profilesList,
+              appState.selectedUsers,
+              appState.userStates,
+              handleUserSelect
+            );
           }
         }
 
@@ -349,10 +428,69 @@ document.addEventListener("DOMContentLoaded", function () {
           addToResults(resultsElement, data.message);
         }
 
+        // Actualizar estado global
         if (data.status) {
           setStatus(statusElement, data.status.type, data.status.text);
         }
 
+        // Actualizar estado de un usuario específico
+        if (data.userId) {
+          appState.userStates[data.userId] = {
+            type: data.status ? data.status.type : "inactive",
+            text: data.status ? data.status.text : "Inactivo",
+          };
+
+          setUserStatus(
+            data.userId,
+            appState.userStates[data.userId].type,
+            appState.userStates[data.userId].text
+          );
+        }
+
+        // Usuarios que han sido programados
+        if (data.scheduledUsers) {
+          const scheduleTime = data.scheduleTime
+            ? new Date(data.scheduleTime)
+            : null;
+          if (scheduleTime) {
+            data.scheduledUsers.forEach((userId) => {
+              appState.userStates[userId] = {
+                type: "scheduled",
+                text: `Programado para: ${formatDate(scheduleTime)}`,
+              };
+            });
+
+            // Re-renderizar lista de usuarios
+            renderUserList(
+              userListContainer,
+              profilesList,
+              appState.selectedUsers,
+              appState.userStates,
+              handleUserSelect
+            );
+          }
+        }
+
+        // Usuarios cuya programación ha sido cancelada
+        if (data.cancelledUsers) {
+          data.cancelledUsers.forEach((userId) => {
+            appState.userStates[userId] = {
+              type: "inactive",
+              text: "Inactivo",
+            };
+          });
+
+          // Re-renderizar lista de usuarios
+          renderUserList(
+            userListContainer,
+            profilesList,
+            appState.selectedUsers,
+            appState.userStates,
+            handleUserSelect
+          );
+        }
+
+        // Si es un mensaje de finalización
         if (data.complete) {
           if (!appState.isScheduled) {
             setStatus(statusElement, "inactive", "Inactivo");
@@ -366,27 +504,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     );
   }
-
-  /**
-   * Actualiza el selector de perfiles basado en el DNI y código actual
-   */
-  function updateProfileSelector() {
-    const currentDni = dniInput.value;
-    const currentCodigo = codigoInput.value;
-    userProfileSelect.value = determineProfile(currentDni, currentCodigo);
-  }
-
-  // Verificar si hay programación activa en cada actualización del reloj
-  setInterval(() => {
-    if (appState.isScheduled && appState.scheduleTime) {
-      const now = new Date();
-      now.setSeconds(0, 0); // Ignorar segundos para comparar solo horas y minutos
-
-      if (appState.scheduleTime <= now) {
-        executeScheduled();
-      }
-    }
-  }, 1000);
 
   // Iniciar escucha de eventos del servidor
   setupServerUpdates();

@@ -3,18 +3,24 @@
  */
 
 /**
- * Ejecuta solicitudes de registro inmediatamente
- * @param {Object} params - Parámetros para el registro
+ * Ejecuta solicitudes de registro inmediatamente para usuarios seleccionados
+ * @param {Array<string>} selectedUsers - IDs de los usuarios seleccionados
+ * @param {Object} globalConfig - Configuración global (intervalo, numSolicitudes)
+ * @param {Object} userConfigs - Configuraciones específicas de usuarios
  * @returns {Promise<Object>} - Respuesta del servidor
  */
-export async function runNowRequest(params) {
+export async function runNowRequest(selectedUsers, globalConfig, userConfigs) {
   try {
     const response = await fetch("/api/run-now", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify({
+        selectedUsers,
+        globalConfig,
+        userConfigs,
+      }),
     });
     return await response.json();
   } catch (error) {
@@ -24,12 +30,19 @@ export async function runNowRequest(params) {
 }
 
 /**
- * Programa solicitudes de registro para una fecha específica
- * @param {Object} params - Parámetros para el registro
+ * Programa solicitudes de registro para una fecha específica para usuarios seleccionados
+ * @param {Array<string>} selectedUsers - IDs de los usuarios seleccionados
+ * @param {Object} globalConfig - Configuración global (intervalo, numSolicitudes)
+ * @param {Object} userConfigs - Configuraciones específicas de usuarios
  * @param {Date} scheduleTime - Fecha y hora programada
  * @returns {Promise<Object>} - Respuesta del servidor
  */
-export async function scheduleRequest(params, scheduleTime) {
+export async function scheduleRequest(
+  selectedUsers,
+  globalConfig,
+  userConfigs,
+  scheduleTime
+) {
   try {
     const response = await fetch("/api/schedule", {
       method: "POST",
@@ -37,7 +50,9 @@ export async function scheduleRequest(params, scheduleTime) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        ...params,
+        selectedUsers,
+        globalConfig,
+        userConfigs,
         scheduleTime: scheduleTime.toISOString(),
       }),
     });
@@ -49,15 +64,68 @@ export async function scheduleRequest(params, scheduleTime) {
 }
 
 /**
- * Cancela la programación de solicitudes
+ * Cancela la programación de solicitudes para usuarios específicos
+ * @param {Array<string>} selectedUsers - IDs de los usuarios seleccionados (opcional)
  * @returns {Promise<Object>} - Respuesta del servidor
  */
-export async function cancelSchedule() {
+export async function cancelSchedule(selectedUsers) {
   try {
-    const response = await fetch("/api/cancel", { method: "POST" });
+    const response = await fetch("/api/cancel", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ selectedUsers }),
+    });
     return await response.json();
   } catch (error) {
     console.error("Error al cancelar la programación:", error);
+    throw error;
+  }
+}
+
+/**
+ * Detiene procesos en ejecución para usuarios específicos
+ * @param {Array<string>} selectedUsers - IDs de los usuarios seleccionados (opcional)
+ * @returns {Promise<Object>} - Respuesta del servidor
+ */
+export async function stopExecution(selectedUsers) {
+  try {
+    const response = await fetch("/api/stop", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ selectedUsers }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error al detener los procesos:", error);
+    throw error;
+  }
+}
+
+/**
+ * Guarda configuraciones de usuario
+ * @param {Object} userConfigs - Mapa de ID de usuario a su configuración específica
+ * @param {Object} globalConfig - Configuración global
+ * @returns {Promise<Object>} - Respuesta del servidor
+ */
+export async function saveUserConfigs(userConfigs, globalConfig) {
+  try {
+    const response = await fetch("/api/save-configs", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userConfigs,
+        globalConfig,
+      }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error al guardar configuraciones:", error);
     throw error;
   }
 }
