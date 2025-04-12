@@ -113,6 +113,12 @@ export function renderUserList(
   userStates = {},
   onUserSelect
 ) {
+  // Eliminar el botón "Seleccionar todos" anterior si existe
+  const existingSelectAllBtn = document.querySelector(".select-all-container");
+  if (existingSelectAllBtn) {
+    existingSelectAllBtn.remove();
+  }
+
   // Limpiar el contenedor
   container.innerHTML = "";
 
