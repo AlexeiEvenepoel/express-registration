@@ -1,6 +1,7 @@
 /**
  * Componentes de la interfaz de usuario
  */
+import { removeCustomUser } from "../utils/profiles.js";
 
 /**
  * Actualiza el reloj con la hora actual
@@ -122,12 +123,14 @@ export function renderUserList(
   // Limpiar el contenedor
   container.innerHTML = "";
 
-  // Crear elementos para cada usuario
+  // Crear elementos para cada usuario (tanto predefinidos como personalizados)
   profiles.forEach((profile) => {
     if (profile.userId === "custom") return;
 
     const userDiv = document.createElement("div");
-    userDiv.className = "user-item";
+    userDiv.className = profile.userId.startsWith("custom_")
+      ? "user-item custom-user"
+      : "user-item";
     userDiv.id = `user-${profile.userId}`;
 
     // Casilla de verificación para selección
@@ -169,6 +172,32 @@ export function renderUserList(
     // Asegurar que el statusIndicator tenga una altura mínima
     statusIndicator.style.minHeight = "24px";
     statusIndicator.style.display = "block";
+
+    // Añadir botón de eliminar para usuarios personalizados
+    if (profile.userId.startsWith("custom_")) {
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn btn-sm btn-danger delete-user-btn";
+      deleteBtn.innerHTML = "×";
+      deleteBtn.title = "Eliminar usuario";
+      deleteBtn.onclick = async (e) => {
+        e.preventDefault();
+        try {
+          if (removeCustomUser(profile.userId)) {
+            // Notificar que el usuario fue eliminado
+            console.log(`Usuario ${profile.name} eliminado correctamente`);
+            userDiv.remove();
+
+            // Actualizar estado si es necesario
+            if (selectedUsers.includes(profile.userId)) {
+              onUserSelect(profile.userId, false);
+            }
+          }
+        } catch (error) {
+          console.error("Error al eliminar usuario:", error);
+        }
+      };
+      userDiv.appendChild(deleteBtn);
+    }
 
     // Agregar todo al contenedor de usuario
     userDiv.appendChild(checkbox);

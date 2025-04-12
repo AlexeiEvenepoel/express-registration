@@ -11,6 +11,9 @@ import {
   saveSelectedUsers,
   loadSelectedUsers,
   initializeUserConfigs,
+  addCustomUser,
+  loadCustomUsers,
+  removeCustomUser,
 } from "./utils/profiles.js";
 import {
   runNowRequest,
@@ -46,6 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const resultsElement = document.getElementById("results");
   const clearResultsBtn = document.getElementById("clearResultsBtn");
   const userListContainer = document.getElementById("userList");
+  const customUserForm = document.getElementById("customUserForm");
 
   // Estado de la aplicación
   const appState = {
@@ -74,6 +78,53 @@ document.addEventListener("DOMContentLoaded", function () {
   stopBtn.addEventListener("click", handleStopExecution);
   clearResultsBtn.addEventListener("click", () => clearResults(resultsElement));
 
+  // Manejar el formulario de usuario personalizado
+  customUserForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const userData = {
+      name: document.getElementById("customUserName").value,
+      dni: document.getElementById("customUserDni").value,
+      codigo: document.getElementById("customUserCode").value,
+    };
+
+    try {
+      const userId = addCustomUser(userData);
+
+      // Actualizar configuraciones
+      appState.userConfigs[userId] = {
+        dni: userData.dni,
+        codigo: userData.codigo,
+      };
+
+      // Guardar configuraciones
+      saveUserConfigs(appState.userConfigs);
+
+      // Actualizar UI
+      addToResults(
+        resultsElement,
+        `✅ Usuario personalizado añadido: ${userData.name}`
+      );
+
+      // Recargar lista de usuarios
+      renderUserList(
+        userListContainer,
+        [...profilesList, ...Object.values(loadCustomUsers())],
+        appState.selectedUsers,
+        appState.userStates,
+        handleUserSelect
+      );
+
+      // Limpiar formulario
+      customUserForm.reset();
+    } catch (error) {
+      addToResults(
+        resultsElement,
+        `❌ Error al añadir usuario: ${error.message}`
+      );
+    }
+  });
+
   /**
    * Carga configuración desde localStorage
    */
@@ -92,10 +143,14 @@ document.addEventListener("DOMContentLoaded", function () {
     // Cargar selección de usuarios
     appState.selectedUsers = loadSelectedUsers();
 
-    // Renderizar lista de usuarios
+    // Cargar usuarios personalizados
+    const customUsers = loadCustomUsers();
+    const allProfiles = [...profilesList, ...Object.values(customUsers)];
+
+    // Renderizar lista de usuarios incluyendo los personalizados
     renderUserList(
       userListContainer,
-      profilesList,
+      allProfiles,
       appState.selectedUsers,
       appState.userStates,
       handleUserSelect
@@ -418,9 +473,14 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             // Re-renderizar lista de usuarios con sus estados
+            const customUsers = loadCustomUsers();
+            const allProfiles = [
+              ...profilesList,
+              ...Object.values(customUsers),
+            ];
             renderUserList(
               userListContainer,
-              profilesList,
+              allProfiles,
               appState.selectedUsers,
               appState.userStates,
               handleUserSelect
@@ -466,9 +526,14 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             // Re-renderizar lista de usuarios
+            const customUsers = loadCustomUsers();
+            const allProfiles = [
+              ...profilesList,
+              ...Object.values(customUsers),
+            ];
             renderUserList(
               userListContainer,
-              profilesList,
+              allProfiles,
               appState.selectedUsers,
               appState.userStates,
               handleUserSelect
@@ -486,9 +551,11 @@ document.addEventListener("DOMContentLoaded", function () {
           });
 
           // Re-renderizar lista de usuarios
+          const customUsers = loadCustomUsers();
+          const allProfiles = [...profilesList, ...Object.values(customUsers)];
           renderUserList(
             userListContainer,
-            profilesList,
+            allProfiles,
             appState.selectedUsers,
             appState.userStates,
             handleUserSelect

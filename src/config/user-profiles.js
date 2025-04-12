@@ -28,6 +28,12 @@ exports.profiles = {
     codigo: "2018200461L",
     name: "Stefano",
   },
+  custom: {
+    userId: "custom",
+    dni: "",
+    codigo: "",
+    name: "Nombre del Usuario",
+  },
 };
 
 // Convierte el objeto de perfiles a una lista

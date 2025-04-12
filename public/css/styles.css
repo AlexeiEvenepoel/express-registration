@@ -186,6 +186,28 @@ body {
   color: #842029;
 }
 
+.delete-user-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  line-height: 1;
+  font-size: 18px;
+  z-index: 2;
+}
+
+#customUserForm {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.user-item.custom-user {
+  border-color: #6c757d;
+}
+
 /* Responsive */
 @media (max-width: 992px) {
   .user-item {

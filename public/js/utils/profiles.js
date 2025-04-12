@@ -153,18 +153,95 @@ export function determineProfile(dni, codigo) {
 }
 
 /**
+ * Añade un usuario personalizado
+ * @param {Object} userData - Datos del usuario (name, dni, codigo)
+ * @returns {string} - ID del usuario creado
+ */
+export function addCustomUser(userData) {
+  if (!userData.name || !userData.dni || !userData.codigo) {
+    throw new Error("Todos los campos son obligatorios");
+  }
+
+  const userId = `custom_${Date.now()}`;
+  const customUser = {
+    userId,
+    dni: userData.dni,
+    codigo: userData.codigo,
+    name: userData.name,
+  };
+
+  // Guardar en localStorage
+  const customUsers = loadCustomUsers();
+  customUsers[userId] = customUser;
+
+  try {
+    localStorage.setItem("uncp-custom-users", JSON.stringify(customUsers));
+    console.log("Usuario personalizado guardado:", customUser);
+  } catch (error) {
+    console.error("Error al guardar usuario personalizado:", error);
+    throw new Error("No se pudo guardar el usuario. Error de almacenamiento.");
+  }
+
+  return userId;
+}
+
+/**
+ * Carga los usuarios personalizados
+ * @returns {Object} - Mapa de usuarios personalizados
+ */
+export function loadCustomUsers() {
+  try {
+    return JSON.parse(localStorage.getItem("uncp-custom-users")) || {};
+  } catch (error) {
+    console.error("Error al cargar usuarios personalizados:", error);
+    return {};
+  }
+}
+
+/**
+ * Elimina un usuario personalizado
+ * @param {string} userId - ID del usuario a eliminar
+ * @returns {boolean} - true si se eliminó correctamente
+ */
+export function removeCustomUser(userId) {
+  try {
+    const customUsers = loadCustomUsers();
+    if (customUsers[userId]) {
+      delete customUsers[userId];
+      localStorage.setItem("uncp-custom-users", JSON.stringify(customUsers));
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Error al eliminar usuario personalizado:", error);
+    return false;
+  }
+}
+
+/**
  * Inicializa todas las configuraciones de usuarios a partir de los perfiles
  * @returns {Object} - Mapa de userId a configuración
  */
 export function initializeUserConfigs() {
   const userConfigs = loadUserConfigs();
+  const customUsers = loadCustomUsers();
 
-  // Asegurarse de que todos los perfiles tengan una configuración
+  // Configurar perfiles predefinidos
   Object.values(profiles).forEach((profile) => {
     if (profile.userId !== "custom" && !userConfigs[profile.userId]) {
       userConfigs[profile.userId] = {
         dni: profile.dni,
         codigo: profile.codigo,
+      };
+    }
+  });
+
+  // Añadir usuarios personalizados
+  Object.values(customUsers).forEach((user) => {
+    if (!userConfigs[user.userId]) {
+      userConfigs[user.userId] = {
+        dni: user.dni,
+        codigo: user.codigo,
       };
     }
   });
