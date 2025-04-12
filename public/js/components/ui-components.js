@@ -114,16 +114,21 @@ export function renderUserList(
   userStates = {},
   onUserSelect
 ) {
-  // Remover TODOS los botones "Seleccionar todos" existentes, no solo el primero
+  // Remover botones "Seleccionar todos" existentes
   const existingSelectAllBtns = document.querySelectorAll(
     ".select-all-container"
   );
-  existingSelectAllBtns.forEach((btn) => btn.remove());
+
+  // Actualizar contador de usuarios seleccionados
+  const userCountElement = document.getElementById("user-count");
+  if (userCountElement) {
+    userCountElement.textContent = selectedUsers.length;
+  }
 
   // Limpiar el contenedor
   container.innerHTML = "";
 
-  // Crear elementos para cada usuario (tanto predefinidos como personalizados)
+  // Crear elementos para cada usuario
   profiles.forEach((profile) => {
     if (profile.userId === "custom") return;
 
@@ -131,6 +136,12 @@ export function renderUserList(
     userDiv.className = profile.userId.startsWith("custom_")
       ? "user-item custom-user"
       : "user-item";
+
+    // Añadir clase "selected" si está seleccionado
+    if (selectedUsers.includes(profile.userId)) {
+      userDiv.classList.add("selected");
+    }
+
     userDiv.id = `user-${profile.userId}`;
 
     // Casilla de verificación para selección
@@ -142,6 +153,12 @@ export function renderUserList(
       if (onUserSelect) {
         onUserSelect(profile.userId, checkbox.checked);
       }
+      // Actualizar estilo cuando se selecciona
+      if (checkbox.checked) {
+        userDiv.classList.add("selected");
+      } else {
+        userDiv.classList.remove("selected");
+      }
     });
 
     // Etiqueta para el usuario
@@ -149,16 +166,26 @@ export function renderUserList(
     label.htmlFor = `checkbox-${profile.userId}`;
     label.textContent = profile.name;
 
-    // Mostrar DNI y código
+    // Mostrar DNI y código con mejor estilo
     const details = document.createElement("div");
     details.className = "user-details";
-    details.textContent = `DNI: ${profile.dni} | Código: ${profile.codigo}`;
 
-    // Modificar la creación del indicador de estado
+    const dniItem = document.createElement("span");
+    dniItem.className = "user-details-item";
+    dniItem.innerHTML = `<i class="fas fa-id-card"></i> ${profile.dni}`;
+
+    const codeItem = document.createElement("span");
+    codeItem.className = "user-details-item";
+    codeItem.innerHTML = `<i class="fas fa-key"></i> ${profile.codigo}`;
+
+    details.appendChild(dniItem);
+    details.appendChild(codeItem);
+
+    // Indicador de estado
     const statusIndicator = document.createElement("span");
     statusIndicator.className = "user-status";
 
-    // Asegurarse de que el estado tenga un valor por defecto
+    // Aplicar estado
     if (userStates[profile.userId]) {
       const state = userStates[profile.userId];
       statusIndicator.textContent = state.text || "Inactivo";
@@ -169,28 +196,27 @@ export function renderUserList(
       statusIndicator.textContent = "Inactivo";
     }
 
-    // Asegurar que el statusIndicator tenga una altura mínima
-    statusIndicator.style.minHeight = "24px";
-    statusIndicator.style.display = "block";
-
-    // Añadir botón de eliminar para usuarios personalizados
+    // Botón de eliminar para usuarios personalizados
     if (profile.userId.startsWith("custom_")) {
       const deleteBtn = document.createElement("button");
-      deleteBtn.className = "btn btn-sm btn-danger delete-user-btn";
+      deleteBtn.className = "btn delete-user-btn";
       deleteBtn.innerHTML = "×";
       deleteBtn.title = "Eliminar usuario";
+      deleteBtn.setAttribute("data-tooltip", "Eliminar usuario");
       deleteBtn.onclick = async (e) => {
         e.preventDefault();
         try {
           if (removeCustomUser(profile.userId)) {
-            // Notificar que el usuario fue eliminado
             console.log(`Usuario ${profile.name} eliminado correctamente`);
-            userDiv.remove();
+            userDiv.style.opacity = "0";
+            setTimeout(() => {
+              userDiv.remove();
 
-            // Actualizar estado si es necesario
-            if (selectedUsers.includes(profile.userId)) {
-              onUserSelect(profile.userId, false);
-            }
+              // Actualizar contador si era un usuario seleccionado
+              if (selectedUsers.includes(profile.userId)) {
+                onUserSelect(profile.userId, false);
+              }
+            }, 300);
           }
         } catch (error) {
           console.error("Error al eliminar usuario:", error);
@@ -209,18 +235,21 @@ export function renderUserList(
     container.appendChild(userDiv);
   });
 
-  // Crear contenedor para el botón "Seleccionar todos" si no existe
-  let selectAllDiv = document.querySelector(".select-all-container");
-  if (!selectAllDiv) {
-    selectAllDiv = document.createElement("div");
-    selectAllDiv.className = "select-all-container";
+  // Actualizar el botón "Seleccionar todos"
+  const selectAllBtn = document.getElementById("selectAllBtn");
+  if (selectAllBtn) {
+    // Actualizar texto según selección
+    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+    const allSelected =
+      Array.from(checkboxes).length > 0 &&
+      Array.from(checkboxes).every((cb) => cb.checked);
 
-    const selectAllBtn = document.createElement("button");
-    selectAllBtn.type = "button";
-    selectAllBtn.className = "btn btn-outline-primary btn-sm";
-    selectAllBtn.textContent = "Seleccionar todos";
+    selectAllBtn.textContent = allSelected
+      ? "Deseleccionar todos"
+      : "Seleccionar todos";
 
-    selectAllBtn.addEventListener("click", () => {
+    // Asegurar que tenga el evento actualizado
+    selectAllBtn.onclick = () => {
       const checkboxes = container.querySelectorAll('input[type="checkbox"]');
       const anyUnchecked = Array.from(checkboxes).some((cb) => !cb.checked);
 
@@ -229,14 +258,28 @@ export function renderUserList(
         if (onUserSelect) {
           onUserSelect(cb.id.replace("checkbox-", ""), anyUnchecked);
         }
+
+        // Actualizar estilo de los items
+        const userItem = document.getElementById(
+          `user-${cb.id.replace("checkbox-", "")}`
+        );
+        if (userItem) {
+          if (anyUnchecked) {
+            userItem.classList.add("selected");
+          } else {
+            userItem.classList.remove("selected");
+          }
+        }
       });
 
       selectAllBtn.textContent = anyUnchecked
         ? "Deseleccionar todos"
         : "Seleccionar todos";
-    });
 
-    selectAllDiv.appendChild(selectAllBtn);
-    container.insertAdjacentElement("beforebegin", selectAllDiv);
+      // Actualizar contador
+      if (userCountElement) {
+        userCountElement.textContent = anyUnchecked ? checkboxes.length : 0;
+      }
+    };
   }
 }
