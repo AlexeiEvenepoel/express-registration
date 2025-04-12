@@ -115,9 +115,12 @@ body {
 .select-all-container {
   margin-bottom: 15px;
   text-align: right;
+  position: relative;
+  z-index: 1;
 }
 
 .user-item {
+  min-height: 120px;
   display: flex;
   flex-direction: column;
   padding: 15px;
@@ -157,12 +160,15 @@ body {
 }
 
 .user-status {
-  margin-top: auto;
+  min-height: 24px;
   padding: 5px 10px;
+  margin-top: 8px;
+  display: block;
   border-radius: 4px;
   background-color: #e9ecef;
   font-size: 0.9rem;
   text-align: center;
+  transition: all 0.2s ease;
 }
 
 .user-item .status-active {

@@ -113,18 +113,18 @@ export function renderUserList(
   userStates = {},
   onUserSelect
 ) {
-  // Eliminar el botón "Seleccionar todos" anterior si existe
-  const existingSelectAllBtn = document.querySelector(".select-all-container");
-  if (existingSelectAllBtn) {
-    existingSelectAllBtn.remove();
-  }
+  // Remover TODOS los botones "Seleccionar todos" existentes, no solo el primero
+  const existingSelectAllBtns = document.querySelectorAll(
+    ".select-all-container"
+  );
+  existingSelectAllBtns.forEach((btn) => btn.remove());
 
   // Limpiar el contenedor
   container.innerHTML = "";
 
   // Crear elementos para cada usuario
   profiles.forEach((profile) => {
-    if (profile.userId === "custom") return; // No mostrar el perfil personalizado
+    if (profile.userId === "custom") return;
 
     const userDiv = document.createElement("div");
     userDiv.className = "user-item";
@@ -151,17 +151,24 @@ export function renderUserList(
     details.className = "user-details";
     details.textContent = `DNI: ${profile.dni} | Código: ${profile.codigo}`;
 
-    // Indicador de estado
+    // Modificar la creación del indicador de estado
     const statusIndicator = document.createElement("span");
     statusIndicator.className = "user-status";
 
-    // Configurar el estado si existe
+    // Asegurarse de que el estado tenga un valor por defecto
     if (userStates[profile.userId]) {
       const state = userStates[profile.userId];
-      setUserStatus(profile.userId, state.type, state.text);
+      statusIndicator.textContent = state.text || "Inactivo";
+      statusIndicator.className = `user-status ${
+        state.type ? `status-${state.type}` : ""
+      }`;
     } else {
       statusIndicator.textContent = "Inactivo";
     }
+
+    // Asegurar que el statusIndicator tenga una altura mínima
+    statusIndicator.style.minHeight = "24px";
+    statusIndicator.style.display = "block";
 
     // Agregar todo al contenedor de usuario
     userDiv.appendChild(checkbox);
@@ -173,30 +180,34 @@ export function renderUserList(
     container.appendChild(userDiv);
   });
 
-  // Añadir un botón para seleccionar/deseleccionar todos
-  const selectAllDiv = document.createElement("div");
-  selectAllDiv.className = "select-all-container";
+  // Crear contenedor para el botón "Seleccionar todos" si no existe
+  let selectAllDiv = document.querySelector(".select-all-container");
+  if (!selectAllDiv) {
+    selectAllDiv = document.createElement("div");
+    selectAllDiv.className = "select-all-container";
 
-  const selectAllBtn = document.createElement("button");
-  selectAllBtn.type = "button";
-  selectAllBtn.className = "btn btn-outline-primary btn-sm";
-  selectAllBtn.textContent = "Seleccionar todos";
-  selectAllBtn.addEventListener("click", () => {
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-    const anyUnchecked = Array.from(checkboxes).some((cb) => !cb.checked);
+    const selectAllBtn = document.createElement("button");
+    selectAllBtn.type = "button";
+    selectAllBtn.className = "btn btn-outline-primary btn-sm";
+    selectAllBtn.textContent = "Seleccionar todos";
 
-    checkboxes.forEach((cb) => {
-      cb.checked = anyUnchecked;
-      if (onUserSelect) {
-        onUserSelect(cb.id.replace("checkbox-", ""), anyUnchecked);
-      }
+    selectAllBtn.addEventListener("click", () => {
+      const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+      const anyUnchecked = Array.from(checkboxes).some((cb) => !cb.checked);
+
+      checkboxes.forEach((cb) => {
+        cb.checked = anyUnchecked;
+        if (onUserSelect) {
+          onUserSelect(cb.id.replace("checkbox-", ""), anyUnchecked);
+        }
+      });
+
+      selectAllBtn.textContent = anyUnchecked
+        ? "Deseleccionar todos"
+        : "Seleccionar todos";
     });
 
-    selectAllBtn.textContent = anyUnchecked
-      ? "Deseleccionar todos"
-      : "Seleccionar todos";
-  });
-
-  selectAllDiv.appendChild(selectAllBtn);
-  container.insertAdjacentElement("beforebegin", selectAllDiv);
+    selectAllDiv.appendChild(selectAllBtn);
+    container.insertAdjacentElement("beforebegin", selectAllDiv);
+  }
 }
