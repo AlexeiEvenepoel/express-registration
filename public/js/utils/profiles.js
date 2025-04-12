@@ -22,11 +22,11 @@ export const profiles = {
     codigo: "2019200797H",
     name: "Alexis",
   },
-  nuevoUsuario: {
-    userId: "nuevoUsuario",
-    dni: "12345678",
-    codigo: "2023123456X",
-    name: "Nombre del Usuario",
+  Stefano: {
+    userId: "stefano",
+    dni: "71648837",
+    codigo: "2018200461L",
+    name: "Stefano",
   },
   custom: {
     userId: "custom",
