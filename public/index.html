@@ -1,176 +1,205 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en"></html>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sistema de Registro UNCP</title>
+    <title>UNCP Registration System - Multi-user</title>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
     <div class="container">
       <header class="text-center my-4">
-        <h1 class="text-primary">Sistema de Registro Automatizado</h1>
-        <h2 class="text-secondary">Comedor Universitario UNCP</h2>
+        <h1 class="app-title">Automated Registration System</h1>
+        <h2 class="app-subtitle">UNCP University Dining Hall</h2>
         <div id="clock" class="clock">00:00:00</div>
       </header>
 
-      <div class="card main-card">
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6 mb-4">
-              <div class="card h-100">
-                <div class="card-header bg-primary text-white">
-                  <h3>Configuración</h3>
-                </div>
-                <div class="card-body">
-                  <form id="configForm">
-                    <div class="mb-3">
-                      <label class="form-label">Perfil de usuario</label>
-                      <div class="d-flex">
-                        <select id="userProfile" class="form-select me-2">
-                          <option value="jefer">Jefer (72879376)</option>
-                          <option value="danny">Danny (75908353)</option>
-                          <option value="Alexis">Alexis (73435865)</option>
-                          <!-- Añadir nuevo usuario aquí -->
-                          <option value="nuevoUsuario">
-                            Nombre del Usuario (12345678)
-                          </option>
-                          <option value="custom">Personalizado</option>
-                        </select>
-                        <button
-                          type="button"
-                          id="loadProfileBtn"
-                          class="btn btn-outline-primary"
-                        >
-                          Cargar
-                        </button>
-                      </div>
-                    </div>
-                    <div class="mb-3">
-                      <label for="dni" class="form-label">DNI</label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="dni"
-                        required
-                      />
-                    </div>
-                    <div class="mb-3">
-                      <label for="codigo" class="form-label"
-                        >Código de Matrícula</label
-                      >
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="codigo"
-                        required
-                      />
-                    </div>
-                    <div class="mb-3">
-                      <label for="numSolicitudes" class="form-label"
-                        >Número de Solicitudes</label
-                      >
-                      <input
-                        type="number"
-                        class="form-control"
-                        id="numSolicitudes"
-                        min="1"
-                        max="100"
-                        value="10"
-                      />
-                    </div>
-                    <div class="mb-3">
-                      <label for="intervalo" class="form-label"
-                        >Intervalo entre Solicitudes (ms)</label
-                      >
-                      <input
-                        type="number"
-                        class="form-control"
-                        id="intervalo"
-                        min="50"
-                        max="1000"
-                        value="100"
-                      />
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                      Guardar Configuración
-                    </button>
-                  </form>
-                </div>
+      <!-- Actualizar la estructura para dos columnas principales -->
+      <div class="row">
+        <!-- Users Section - Left Column -->
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+              <div>
+                <h3>Users</h3>
+                <span class="text-white-50">Select users for execution</span>
               </div>
+              <button class="btn btn-light btn-sm add-user-btn" id="addUserBtn" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="fas fa-user-plus me-1"></i> Add User
+              </button>
             </div>
-
-            <div class="col-md-6 mb-4">
-              <div class="card h-100">
-                <div class="card-header bg-success text-white">
-                  <h3>Acciones</h3>
+            <div class="card-body d-flex flex-column">
+              <div class="select-all-container">
+                <div class="user-counter">
+                  <span id="user-count">0</span> 
+                  -users selected
                 </div>
-                <div class="card-body d-flex flex-column">
-                  <div class="status-box mb-3">
-                    <h4>Estado</h4>
-                    <div id="status" class="status-indicator">Inactivo</div>
-                    <div id="nextExecution" class="next-execution"></div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label">Programar para</label>
-                    <div class="d-flex mb-2">
-                      <input
-                        type="date"
-                        id="scheduleDateInput"
-                        class="form-control me-2"
-                      />
-                      <input
-                        type="time"
-                        class="form-control"
-                        id="horaInicio"
-                        value="07:00"
-                      />
-                    </div>
-                  </div>
-
-                  <div class="mt-auto">
-                    <button
-                      id="runNowBtn"
-                      class="btn btn-success btn-lg mb-3 w-100"
-                    >
-                      Ejecutar Ahora
-                    </button>
-                    <button
-                      id="scheduleBtn"
-                      class="btn btn-primary btn-lg mb-3 w-100"
-                    >
-                      Programar
-                    </button>
-                    <button id="stopBtn" class="btn btn-danger btn-lg w-100">
-                      Detener
-                    </button>
-                  </div>
-                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="selectAllBtn">
+                  Select All
+                </button>
+              </div>
+              <div id="userList" class="user-list-container flex-grow-1">
+                <!-- Users generated dynamically -->
               </div>
             </div>
           </div>
-
-          <div class="card mt-4">
-            <div class="card-header bg-dark text-white">
-              <h3>Resultados</h3>
+        </div>
+        
+        <!-- Actions & Settings - Right Column -->
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-success text-white">
+              <h3>Actions & Settings</h3>
             </div>
-            <div class="card-body">
-              <div class="results-container">
-                <pre id="results" class="results">
-Los resultados se mostrarán aquí...</pre
-                >
+            <div class="card-body d-flex flex-column">
+              <!-- Configuración compacta -->
+              <div class="config-compact">
+                <div class="config-header" id="configToggle">
+                  <h4>
+                    <i class="fas fa-cog"></i> Configuration
+                  </h4>
+                  <small class="text-muted">Click to expand/collapse</small>
+                </div>
+                <div class="config-body" id="configBody">
+                  <form id="configForm" class="mb-3">
+                    <div class="config-row">
+                      <div class="config-item">
+                        <label for="numSolicitudes">Requests</label>
+                        <input
+                          type="number"
+                          class="form-control form-control-sm"
+                          id="numSolicitudes"
+                          min="1"
+                          max="100"
+                          value="10"
+                        />
+                      </div>
+                      <div class="config-item">
+                        <label for="intervalo">Interval (ms)</label>
+                        <input
+                          type="number"
+                          class="form-control form-control-sm"
+                          id="intervalo"
+                          min="50"
+                          max="1000"
+                          value="100"
+                        />
+                      </div>
+                      <button type="submit" class="config-save-btn">
+                        <i class="fas fa-save"></i>
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
-              <button
-                id="clearResultsBtn"
-                class="btn btn-outline-secondary mt-3"
-              >
-                Limpiar Resultados
-              </button>
+
+              <div class="status-box mb-3">
+                <h4>General Status</h4>
+                <div id="status" class="status-indicator">Inactive</div>
+                <div id="nextExecution" class="next-execution"></div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Schedule for</label>
+                <div class="d-flex mb-2">
+                  <input
+                    type="date"
+                    id="scheduleDateInput"
+                    class="form-control me-2"
+                  />
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="horaInicio"
+                    value="07:00"
+                  />
+                </div>
+              </div>
+
+              <div class="mt-auto">
+                <button
+                  id="runNowBtn"
+                  class="btn btn-success btn-lg mb-3 w-100 action-btn"
+                >
+                  <i class="fas fa-play me-2"></i> Run Now
+                  <span class="action-badge" id="runBadge">10</span>
+                </button>
+                <button
+                  id="scheduleBtn"
+                  class="btn btn-primary btn-lg mb-3 w-100"
+                >
+                  <i class="fas fa-calendar me-2"></i> Schedule
+                </button>
+                <button id="stopBtn" class="btn btn-danger btn-lg w-100">
+                  <i class="fas fa-stop me-2"></i> Stop
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Section - Full Width -->
+      <div class="card mt-4">
+        <div class="card-header bg-dark text-white">
+          <h3>Results</h3>
+        </div>
+        <div class="card-body">
+          <div class="results-container">
+            <pre id="results" class="results">
+Results will be displayed here...</pre
+            >
+          </div>
+          <button
+            id="clearResultsBtn"
+            class="btn btn-outline-secondary mt-3"
+          >
+            Clear Results
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal for Adding Custom User -->
+      <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+              <h5 class="modal-title" id="addUserModalLabel">
+                <i class="fas fa-user-plus me-2"></i>
+                Add Custom User
+              </h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form id="customUserForm">
+                <div class="mb-3">
+                  <label for="customUserName" class="form-label">Name</label>
+                  <input type="text" class="form-control" id="customUserName" placeholder="Example: John Doe" required>
+                </div>
+                <div class="mb-3">
+                  <label for="customUserDni" class="form-label">DNI</label>
+                  <input type="text" class="form-control" id="customUserDni" pattern="\d{8}" placeholder="Example: 72345678" required>
+                  <div class="form-text">Must be exactly 8 digits</div>
+                </div>
+                <div class="mb-3">
+                  <label for="customUserCode" class="form-label">Code</label>
+                  <input type="text" class="form-control" id="customUserCode" placeholder="Example: 2020101234A" required>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i> Add User
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -178,13 +207,13 @@ Los resultados se mostrarán aquí...</pre
 
       <footer class="text-center text-muted my-4">
         <p>
-          Sistema de Registro Automatizado para el Comedor Universitario UNCP
+          Automated Registration System for the UNCP University Dining Hall
           &copy; 2025
         </p>
       </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/app.js"></script>
+    <script type="module" src="js/app.js"></script>
   </body>
 </html>
