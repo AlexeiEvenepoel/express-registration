@@ -113,6 +113,9 @@ export class ActionsComponent {
 
   /**
    * Handle run now button click
+   * @param {Array<string>} selectedUsers - IDs of selected users
+   * @param {Object} globalConfig - Global configuration
+   * @param {Object} userConfigs - User-specific configurations
    */
   async handleRunNow(selectedUsers, globalConfig, userConfigs = {}) {
     if (!selectedUsers || selectedUsers.length === 0) {

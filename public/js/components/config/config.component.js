@@ -181,4 +181,23 @@ export class ConfigComponent {
       this.onMessage?.("❌ Error saving configuration");
     }
   }
+
+  /**
+   * Get the current global configuration from form inputs
+   * @returns {Object} The global configuration object
+   */
+  getGlobalConfig() {
+    // Get values from form inputs
+    const numSolicitudes =
+      parseInt(document.getElementById("numSolicitudes").value) || 10;
+    const intervalo =
+      parseInt(document.getElementById("intervalo").value) || 100;
+    const horaInicio = document.getElementById("horaInicio")?.value || "07:00";
+
+    return {
+      numSolicitudes,
+      intervalo,
+      horaInicio,
+    };
+  }
 }
