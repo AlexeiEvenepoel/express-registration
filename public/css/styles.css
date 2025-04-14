@@ -184,6 +184,50 @@ header::after {
   font-weight: 500;
 }
 
+/* Status and Schedule sections */
+.status-section {
+  position: relative;
+  border: 1px solid var(--gray);
+}
+
+.status-section::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--success), var(--primary));
+  border-radius: 3px 0 0 3px;
+}
+
+.schedule-section {
+  position: relative;
+  border: 1px solid var(--gray);
+}
+
+.schedule-section::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--primary), var(--info));
+  border-radius: 3px 0 0 3px;
+}
+
+.status-section,
+.schedule-section {
+  transition: var(--transition);
+}
+
+.status-section:hover,
+.schedule-section:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
 /* Formularios mejorados */
 .form-label {
   font-weight: 500;
@@ -263,6 +307,35 @@ input[type="number"].form-control {
   font-weight: 600;
   font-size: 1.1rem;
   letter-spacing: 0.02em;
+}
+
+/* Action buttons improvements */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-buttons button {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  transform-origin: center;
+}
+
+.action-buttons button:hover {
+  transform: translateY(-1px);
+}
+
+.action-buttons button:active {
+  transform: translateY(1px);
+}
+
+.action-buttons i {
+  transition: transform 0.2s ease;
+}
+
+.action-buttons button:hover i {
+  transform: scale(1.2);
 }
 
 /* Resultados mejorados */

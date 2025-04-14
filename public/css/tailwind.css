@@ -1,0 +1,246 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos personalizados adicionales */
+@layer components {
+  .btn {
+    @apply rounded-lg py-2 px-4 font-medium transition-all relative overflow-hidden border-none;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white shadow-md hover:shadow-lg;
+  }
+
+  .btn-success {
+    @apply bg-success text-white shadow-md hover:shadow-lg;
+  }
+
+  .btn-danger {
+    @apply bg-danger text-white shadow-md hover:shadow-lg;
+  }
+
+  .btn-outline-primary {
+    @apply border border-primary text-primary hover:bg-primary hover:text-white;
+  }
+
+  .btn-lg {
+    @apply py-3 px-6 text-lg font-semibold;
+  }
+
+  .card {
+    @apply rounded-xl border border-gray-200 transition-shadow hover:shadow-lg overflow-hidden;
+  }
+
+  .card-header {
+    @apply p-4 border-b border-gray-100;
+  }
+
+  .card-body {
+    @apply p-2;
+  }
+
+  .form-control {
+    @apply rounded-lg px-4 py-2 border border-gray-300 transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary;
+  }
+
+  .clock {
+    @apply text-2xl font-semibold text-primary my-4 py-2 px-5 bg-blue-50 rounded-full w-fit min-w-[180px] text-center shadow-md transition-all hover:translate-y-[-2px] hover:shadow-lg;
+  }
+
+  .status-indicator {
+    @apply inline-flex items-center justify-center gap-1 text-lg font-semibold py-2 mt-2 text-center rounded-full bg-gray-200 transition-all shadow;
+  }
+
+  .status-indicator.status-active {
+    @apply bg-green-100 text-green-700;
+  }
+
+  .status-indicator.status-active i {
+    @apply text-green-500;
+  }
+
+  .status-indicator.status-scheduled {
+    @apply bg-blue-100 text-blue-700;
+  }
+
+  .status-indicator.status-scheduled i {
+    @apply text-blue-500;
+  }
+
+  .status-indicator.status-error {
+    @apply bg-red-100 text-red-700;
+  }
+
+  .status-indicator.status-error i {
+    @apply text-red-500;
+  }
+
+  @keyframes activeGlow {
+    0%,
+    100% {
+      @apply shadow-sm;
+    }
+    50% {
+      box-shadow: 0 0 15px theme("colors.success" / 30%);
+    }
+  }
+
+  @keyframes statusChange {
+    0% {
+      transform: scale(0.95);
+      opacity: 0.5;
+    }
+    50% {
+      transform: scale(1.02);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .status-change {
+    animation: statusChange 0.3s ease-out forwards;
+  }
+
+  .user-item {
+    @apply min-h-[100px] p-4 rounded-lg border-l-4 border-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative bg-white;
+    height: fit-content;
+  }
+
+  .user-item::before {
+    @apply content-[''] absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300;
+    background: linear-gradient(
+      45deg,
+      theme("colors.primary" / 2%),
+      theme("colors.primary" / 5%)
+    );
+  }
+
+  .user-item:hover::before {
+    @apply opacity-100;
+  }
+
+  .user-item.selected {
+    @apply border-l-4 border-primary bg-primary/5;
+  }
+
+  .user-item.selected::before {
+    @apply opacity-100;
+  }
+
+  .user-details {
+    @apply text-sm text-gray-500 mb-2 flex gap-2;
+  }
+
+  .user-details-item {
+    @apply py-1 px-2 bg-gray-100 rounded flex items-center;
+  }
+
+  .results-container {
+    @apply bg-gray-900 rounded-xl min-h-[200px] max-h-[400px] overflow-y-auto shadow-inner border border-black/10;
+  }
+
+  .results {
+    @apply text-green-400 p-4 m-0 whitespace-pre-wrap font-mono leading-relaxed text-sm;
+  }
+
+  .status-section,
+  .schedule-section {
+    min-height: auto;
+    @apply shadow-sm;
+  }
+
+  .select-all-btn {
+    @apply relative overflow-hidden;
+  }
+
+  .select-all-btn::before {
+    @apply absolute inset-0 bg-primary/10 transform scale-x-0 origin-left transition-transform duration-200;
+    content: "";
+  }
+
+  .select-all-btn:hover::before {
+    @apply scale-x-100;
+  }
+
+  .select-all-btn::after {
+    @apply content-[''] absolute inset-0 bg-primary/10 transform translate-y-full transition-transform duration-300;
+  }
+
+  .select-all-btn:hover::after {
+    @apply translate-y-0;
+  }
+
+  .select-all-btn:active {
+    @apply transform scale-95;
+  }
+
+  .select-all-btn i {
+    @apply transition-transform duration-300;
+  }
+
+  .select-all-btn:hover i {
+    @apply transform scale-110;
+  }
+
+  .delete-user-btn {
+    @apply transition-all duration-300 transform;
+  }
+
+  .delete-user-btn:hover {
+    @apply rotate-90;
+  }
+
+  input[type="checkbox"] {
+    @apply transition-all duration-200;
+  }
+
+  input[type="checkbox"]:checked {
+    @apply animate-pulse;
+    animation-iteration-count: 1;
+    animation-duration: 0.3s;
+  }
+
+  .modal.fade .modal-dialog {
+    @apply transition-all duration-300 transform;
+  }
+
+  .modal.fade:not(.show) .modal-dialog {
+    @apply -translate-y-8 opacity-0;
+  }
+
+  .modal.show .modal-dialog {
+    @apply translate-y-0 opacity-100;
+  }
+
+  /* Estilos para la configuración */
+  .config-section {
+    @apply bg-white rounded-lg border border-gray-200 shadow-sm;
+  }
+
+  .config-header:hover .fa-chevron-down {
+    @apply text-gray-600;
+  }
+
+  .pin-config-btn {
+    @apply opacity-70 hover:opacity-100;
+  }
+
+  .pin-config-btn:focus {
+    @apply outline-none ring-2 ring-primary/20;
+  }
+
+  .pin-config-btn .fa-thumbtack {
+    @apply transform;
+    transform-origin: center;
+  }
+
+  .config-body {
+    @apply transform;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.2s ease-in-out,
+                padding 0.3s ease-in-out;
+  }
+}

@@ -1,211 +1,81 @@
 <!DOCTYPE html>
-<html lang="en"></html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UNCP Registration System - Multi-user</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind with our theme -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0d6efd",
+              secondary: "#6c757d",
+              success: "#198754",
+              danger: "#dc3545",
+              warning: "#ffc107",
+              info: "#0dcaf0",
+              light: "#f8f9fa",
+              dark: "#212529",
+            },
+          },
+        },
+      };
+    </script>
+    <!-- Font Awesome -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="css/styles.css" />
+    <!-- Bootstrap for modals and other components -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    />
   </head>
-  <body>
-    <div class="container">
-      <header class="text-center my-4">
-        <h1 class="app-title">Automated Registration System</h1>
-        <h2 class="app-subtitle">UNCP University Dining Hall</h2>
-        <div id="clock" class="clock">00:00:00</div>
-      </header>
+  <body class="bg-light text-dark">
+    <div class="container max-w-6xl mx-auto px-4">
+      <!-- Header Component -->
+      <div id="headerContainer"></div>
 
-      <!-- Actualizar la estructura para dos columnas principales -->
-      <div class="row">
-        <!-- Users Section - Left Column -->
-        <div class="col-md-6 mb-4">
-          <div class="card h-100">
-            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-              <div>
-                <h3>Users</h3>
-                <span class="text-white-50">Select users for execution</span>
-              </div>
-              <button class="btn btn-light btn-sm add-user-btn" id="addUserBtn" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                <i class="fas fa-user-plus me-1"></i> Add User
-              </button>
-            </div>
-            <div class="card-body d-flex flex-column">
-              <div class="select-all-container">
-                <div class="user-counter">
-                  <span id="user-count">0</span> 
-                  -users selected
-                </div>
-                <button type="button" class="btn btn-outline-primary btn-sm" id="selectAllBtn">
-                  Select All
-                </button>
-              </div>
-              <div id="userList" class="user-list-container flex-grow-1">
-                <!-- Users generated dynamically -->
-              </div>
-            </div>
-          </div>
-        </div>
-        
+      <!-- Main Content -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Users Component - Left Column -->
+        <div id="usersContainer"></div>
+
         <!-- Actions & Settings - Right Column -->
-        <div class="col-md-6 mb-4">
-          <div class="card h-100">
-            <div class="card-header bg-success text-white">
-              <h3>Actions & Settings</h3>
-            </div>
-            <div class="card-body d-flex flex-column">
-              <!-- Configuración compacta -->
-              <div class="config-compact">
-                <div class="config-header" id="configToggle">
-                  <h4>
-                    <i class="fas fa-cog"></i> Configuration
-                  </h4>
-                  <small class="text-muted">Click to expand/collapse</small>
-                </div>
-                <div class="config-body" id="configBody">
-                  <form id="configForm" class="mb-3">
-                    <div class="config-row">
-                      <div class="config-item">
-                        <label for="numSolicitudes">Requests</label>
-                        <input
-                          type="number"
-                          class="form-control form-control-sm"
-                          id="numSolicitudes"
-                          min="1"
-                          max="100"
-                          value="10"
-                        />
-                      </div>
-                      <div class="config-item">
-                        <label for="intervalo">Interval (ms)</label>
-                        <input
-                          type="number"
-                          class="form-control form-control-sm"
-                          id="intervalo"
-                          min="50"
-                          max="1000"
-                          value="100"
-                        />
-                      </div>
-                      <button type="submit" class="config-save-btn">
-                        <i class="fas fa-save"></i>
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+        <div class="card rounded-xl border border-gray-200 hover:shadow-lg overflow-hidden h-full">
+          <div class="card-header p-4 border-b border-gray-100 bg-gradient-to-r from-success to-green-600 text-white">
+            <h3 class="text-xl font-semibold mb-0">Actions & Settings</h3>
+          </div>
+          <div class="card-body p-6 flex flex-col">
+            <!-- Config Component -->
+            <div id="configContainer"></div>
 
-              <div class="status-box mb-3">
-                <h4>General Status</h4>
-                <div id="status" class="status-indicator">Inactive</div>
-                <div id="nextExecution" class="next-execution"></div>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label">Schedule for</label>
-                <div class="d-flex mb-2">
-                  <input
-                    type="date"
-                    id="scheduleDateInput"
-                    class="form-control me-2"
-                  />
-                  <input
-                    type="time"
-                    class="form-control"
-                    id="horaInicio"
-                    value="07:00"
-                  />
-                </div>
-              </div>
-
-              <div class="mt-auto">
-                <button
-                  id="runNowBtn"
-                  class="btn btn-success btn-lg mb-3 w-100 action-btn"
-                >
-                  <i class="fas fa-play me-2"></i> Run Now
-                  <span class="action-badge" id="runBadge">10</span>
-                </button>
-                <button
-                  id="scheduleBtn"
-                  class="btn btn-primary btn-lg mb-3 w-100"
-                >
-                  <i class="fas fa-calendar me-2"></i> Schedule
-                </button>
-                <button id="stopBtn" class="btn btn-danger btn-lg w-100">
-                  <i class="fas fa-stop me-2"></i> Stop
-                </button>
-              </div>
-            </div>
+            <!-- Actions Component -->
+            <div id="actionsContainer"></div>
           </div>
         </div>
       </div>
 
-      <!-- Results Section - Full Width -->
-      <div class="card mt-4">
-        <div class="card-header bg-dark text-white">
-          <h3>Results</h3>
-        </div>
-        <div class="card-body">
-          <div class="results-container">
-            <pre id="results" class="results">
-Results will be displayed here...</pre
-            >
-          </div>
-          <button
-            id="clearResultsBtn"
-            class="btn btn-outline-secondary mt-3"
-          >
-            Clear Results
-          </button>
-        </div>
-      </div>
+      <!-- Results Component - Full Width -->
+      <div class="mt-6 mb-8" id="resultsContainer"></div>
 
       <!-- Modal for Adding Custom User -->
-      <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header bg-secondary text-white">
-              <h5 class="modal-title" id="addUserModalLabel">
-                <i class="fas fa-user-plus me-2"></i>
-                Add Custom User
-              </h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <form id="customUserForm">
-                <div class="mb-3">
-                  <label for="customUserName" class="form-label">Name</label>
-                  <input type="text" class="form-control" id="customUserName" placeholder="Example: John Doe" required>
-                </div>
-                <div class="mb-3">
-                  <label for="customUserDni" class="form-label">DNI</label>
-                  <input type="text" class="form-control" id="customUserDni" pattern="\d{8}" placeholder="Example: 72345678" required>
-                  <div class="form-text">Must be exactly 8 digits</div>
-                </div>
-                <div class="mb-3">
-                  <label for="customUserCode" class="form-label">Code</label>
-                  <input type="text" class="form-control" id="customUserCode" placeholder="Example: 2020101234A" required>
-                </div>
-                <div class="d-flex justify-content-between">
-                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save me-1"></i> Add User
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+      <div
+        class="modal fade"
+        id="addUserModal"
+        tabindex="-1"
+        aria-labelledby="addUserModalLabel"
+        aria-hidden="true"
+      >
+        <!-- Modal content is included in users.component.html -->
       </div>
 
-      <footer class="text-center text-muted my-4">
+      <footer class="text-center text-gray-500 my-8">
         <p>
           Automated Registration System for the UNCP University Dining Hall
           &copy; 2025
@@ -214,6 +84,7 @@ Results will be displayed here...</pre
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="js/app.js"></script>
+    <script src="js/component-loader.js" type="module"></script>
+    <script src="js/app.js" type="module"></script>
   </body>
 </html>
