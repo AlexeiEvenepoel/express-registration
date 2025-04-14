@@ -62,7 +62,7 @@ export class ActionsComponent {
   updateRunBadge(count) {
     if (this.runBadgeElement) {
       this.runBadgeElement.textContent = count.toString();
-      this.runBadgeElement.style.display = count > 0 ? 'flex' : 'none';
+      this.runBadgeElement.style.display = count > 0 ? "flex" : "none";
     }
   }
 
@@ -122,7 +122,7 @@ export class ActionsComponent {
 
     this.setStatus("active", "Running requests...");
     this.state.isRunning = true;
-    
+
     // Update badge with selected users count
     this.updateRunBadge(selectedUsers.length);
 

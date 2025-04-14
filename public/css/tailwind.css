@@ -240,7 +240,6 @@
   .config-body {
     @apply transform;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.2s ease-in-out,
-                padding 0.3s ease-in-out;
+      opacity 0.2s ease-in-out, padding 0.3s ease-in-out;
   }
 }

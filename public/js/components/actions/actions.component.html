@@ -2,18 +2,26 @@
   <!-- Status and Schedule Section -->
   <div class="grid grid-cols-2 gap-2">
     <!-- Status Box -->
-    <div class="status-section bg-gray-50/80 rounded-lg p-2 relative overflow-hidden">
+    <div
+      class="status-section bg-gray-50/80 rounded-lg p-2 relative overflow-hidden"
+    >
       <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-1.5">
           <i class="fas fa-circle-dot text-xs text-primary"></i>
           <h4 class="font-medium text-xs text-gray-600">Status</h4>
         </div>
-        <div id="nextExecution" class="text-[11px] text-primary font-medium flex items-center gap-1">
+        <div
+          id="nextExecution"
+          class="text-[11px] text-primary font-medium flex items-center gap-1"
+        >
           <i class="fas fa-clock text-[10px] opacity-75"></i>
           <span></span>
         </div>
       </div>
-      <div id="status" class="status-indicator text-xs py-1 px-2 flex items-center justify-center gap-1.5">
+      <div
+        id="status"
+        class="status-indicator text-xs py-1 px-2 flex items-center justify-center gap-1.5"
+      >
         <i class="fas fa-circle text-[8px] opacity-75"></i>
         <span>Inactive</span>
       </div>
@@ -27,12 +35,25 @@
       </div>
       <div class="flex flex-col gap-1">
         <div class="relative">
-          <input type="date" id="scheduleDateInput" class="w-full rounded pl-6 pr-2 py-1 text-xs border border-gray-300 focus:ring-1 focus:ring-primary/20 focus:border-primary"/>
-          <i class="fas fa-calendar-alt absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400"></i>
+          <input
+            type="date"
+            id="scheduleDateInput"
+            class="w-full rounded pl-6 pr-2 py-1 text-xs border border-gray-300 focus:ring-1 focus:ring-primary/20 focus:border-primary"
+          />
+          <i
+            class="fas fa-calendar-alt absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400"
+          ></i>
         </div>
         <div class="relative">
-          <input type="time" id="horaInicio" value="07:00" class="w-full rounded pl-6 pr-2 py-1 text-xs border border-gray-300 focus:ring-1 focus:ring-primary/20 focus:border-primary"/>
-          <i class="fas fa-clock absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400"></i>
+          <input
+            type="time"
+            id="horaInicio"
+            value="07:00"
+            class="w-full rounded pl-6 pr-2 py-1 text-xs border border-gray-300 focus:ring-1 focus:ring-primary/20 focus:border-primary"
+          />
+          <i
+            class="fas fa-clock absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400"
+          ></i>
         </div>
       </div>
     </div>
@@ -40,19 +61,38 @@
 
   <!-- Action Buttons -->
   <div class="flex gap-1.5">
-    <button id="runNowBtn" class="flex-1 bg-success hover:bg-success/90 text-white py-1.5 px-2 rounded transition-all duration-200 group relative flex items-center justify-center shadow-sm hover:shadow-md">
-      <i class="fas fa-play text-xs mr-1.5 transition-transform group-hover:scale-110"></i>
+    <button
+      id="runNowBtn"
+      class="flex-1 bg-success hover:bg-success/90 text-white py-1.5 px-2 rounded transition-all duration-200 group relative flex items-center justify-center shadow-sm hover:shadow-md"
+    >
+      <i
+        class="fas fa-play text-xs mr-1.5 transition-transform group-hover:scale-110"
+      ></i>
       <span class="font-medium text-xs">Run Now</span>
-      <span class="action-badge text-[10px] bg-white/90 text-success absolute -top-2 -right-2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full font-semibold shadow-sm border border-success/10" id="runBadge" style="display: none;"></span>
+      <span
+        class="action-badge text-[10px] bg-white/90 text-success absolute -top-2 -right-2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full font-semibold shadow-sm border border-success/10"
+        id="runBadge"
+        style="display: none"
+      ></span>
     </button>
 
-    <button id="scheduleBtn" class="flex-1 bg-primary hover:bg-primary/90 text-white py-1.5 px-2 rounded transition-all duration-200 group flex items-center justify-center shadow-sm hover:shadow-md">
-      <i class="fas fa-calendar text-xs mr-1.5 transition-transform group-hover:scale-110"></i>
+    <button
+      id="scheduleBtn"
+      class="flex-1 bg-primary hover:bg-primary/90 text-white py-1.5 px-2 rounded transition-all duration-200 group flex items-center justify-center shadow-sm hover:shadow-md"
+    >
+      <i
+        class="fas fa-calendar text-xs mr-1.5 transition-transform group-hover:scale-110"
+      ></i>
       <span class="font-medium text-xs">Schedule</span>
     </button>
 
-    <button id="stopBtn" class="flex-1 bg-danger/90 hover:bg-danger text-white py-1.5 px-2 rounded transition-all duration-200 group flex items-center justify-center shadow-sm hover:shadow-md">
-      <i class="fas fa-stop text-xs mr-1.5 transition-transform group-hover:scale-110"></i>
+    <button
+      id="stopBtn"
+      class="flex-1 bg-danger/90 hover:bg-danger text-white py-1.5 px-2 rounded transition-all duration-200 group flex items-center justify-center shadow-sm hover:shadow-md"
+    >
+      <i
+        class="fas fa-stop text-xs mr-1.5 transition-transform group-hover:scale-110"
+      ></i>
       <span class="font-medium text-xs">Stop</span>
     </button>
   </div>
