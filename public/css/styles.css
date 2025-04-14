@@ -717,6 +717,50 @@ input[type="number"].form-control {
   transform: scale(1.1);
 }
 
+/* Config save button improvements */
+.save-config-btn {
+  transform: translateY(0);
+  position: relative;
+  overflow: hidden;
+}
+
+.save-config-btn:hover {
+  transform: translateY(-1px);
+}
+
+.save-config-btn:active {
+  transform: translateY(1px);
+}
+
+.save-config-btn.success {
+  background-color: var(--success);
+}
+
+.save-config-btn i {
+  transition: transform 0.2s ease;
+}
+
+.save-config-btn:hover i {
+  transform: scale(1.2);
+}
+
+/* Success animation */
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.save-config-btn.success {
+  animation: successPulse 0.5s ease;
+}
+
 /* Dropdown para configuración rápida */
 .action-config-menu {
   position: relative;

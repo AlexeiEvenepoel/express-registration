@@ -22,42 +22,47 @@
     id="configBody"
   >
     <form id="configForm" class="mb-3 relative mt-2">
-      <div class="flex items-end gap-4">
-        <div class="flex-1">
-          <label
-            for="numSolicitudes"
-            class="block font-medium text-gray-700 mb-0.5 text-sm"
-            >Number of Requests</label
-          >
-          <input
-            type="number"
-            class="w-full rounded-lg px-3 py-1 border border-gray-300 text-center font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            id="numSolicitudes"
-            min="1"
-            max="100"
-            value="10"
-          />
-        </div>
-        <div class="flex-1">
-          <label
-            for="intervalo"
-            class="block font-medium text-gray-700 mb-0.5 text-sm"
-            >Interval (ms)</label
-          >
-          <input
-            type="number"
-            class="w-full rounded-lg px-3 py-1 border border-gray-300 text-center font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            id="intervalo"
-            min="50"
-            max="1000"
-            value="100"
-          />
+      <div class="grid gap-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label
+              for="numSolicitudes"
+              class="block font-medium text-gray-700 mb-0.5 text-sm"
+            >
+              Number of Requests
+            </label>
+            <input
+              type="number"
+              class="w-full rounded-lg px-3 py-1.5 border border-gray-300 text-center font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              id="numSolicitudes"
+              min="1"
+              max="100"
+              value="10"
+            />
+          </div>
+          <div>
+            <label
+              for="intervalo"
+              class="block font-medium text-gray-700 mb-0.5 text-sm"
+            >
+              Interval (ms)
+            </label>
+            <input
+              type="number"
+              class="w-full rounded-lg px-3 py-1.5 border border-gray-300 text-center font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              id="intervalo"
+              min="50"
+              max="1000"
+              value="100"
+            />
+          </div>
         </div>
         <button
           type="submit"
-          class="h-10 w-10 flex items-center justify-center rounded-lg shadow-md bg-primary text-white hover:scale-110 transition-transform"
+          class="save-config-btn flex items-center justify-center gap-2 w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
         >
           <i class="fas fa-save"></i>
+          <span class="font-medium">Save Config</span>
         </button>
       </div>
     </form>

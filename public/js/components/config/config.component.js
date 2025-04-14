@@ -2,8 +2,6 @@
  * Config Component
  * Handles all configuration settings and persistence
  */
-import { saveGlobalConfig, loadGlobalConfig } from "../../utils/profiles.js";
-import { saveUserConfigs as apiSaveUserConfigs } from "../../services/api-service.js";
 
 export class ConfigComponent {
   constructor(onMessage) {
@@ -31,6 +29,9 @@ export class ConfigComponent {
     if (this.isPinned) {
       this.toggleExpand(true);
     }
+
+    // Load saved configuration
+    this.loadSavedConfig();
   }
 
   /**
@@ -159,26 +160,64 @@ export class ConfigComponent {
    * Handle saving configuration
    */
   handleSaveConfig() {
-    const config = {
-      numSolicitudes:
-        parseInt(document.getElementById("numSolicitudes").value) || 10,
-      intervalo: parseInt(document.getElementById("intervalo").value) || 100,
-    };
+    const config = this.getGlobalConfig();
 
     try {
+      // Save to localStorage
       localStorage.setItem("uncp-global-config", JSON.stringify(config));
+
+      // Update UI to show success
+      const saveBtn = document.querySelector(".save-config-btn");
+      const saveIcon = saveBtn.querySelector("i");
+      const saveText = saveBtn.querySelector("span");
+
+      // Change to success state
+      saveBtn.classList.add("success");
+      saveIcon.classList.remove("fa-save");
+      saveIcon.classList.add("fa-check");
+      saveText.textContent = "Saved!";
+
       this.onMessage?.("✅ Configuration saved successfully");
 
-      const saveBtn = document.querySelector(
-        '#configForm button[type="submit"]'
-      );
-      saveBtn.classList.add("bg-success");
+      // Reset button after animation
       setTimeout(() => {
-        saveBtn.classList.remove("bg-success");
-      }, 1000);
+        saveBtn.classList.remove("success");
+        saveIcon.classList.remove("fa-check");
+        saveIcon.classList.add("fa-save");
+        saveText.textContent = "Save Config";
+      }, 1500);
+
+      // Load saved config when component initializes
+      this.loadSavedConfig();
     } catch (error) {
       console.error("Error saving config:", error);
       this.onMessage?.("❌ Error saving configuration");
+    }
+  }
+
+  /**
+   * Load saved configuration from localStorage
+   */
+  loadSavedConfig() {
+    try {
+      const savedConfig = localStorage.getItem("uncp-global-config");
+      if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+
+        // Update input values
+        const numSolicitudesInput = document.getElementById("numSolicitudes");
+        const intervaloInput = document.getElementById("intervalo");
+
+        if (numSolicitudesInput) {
+          numSolicitudesInput.value = config.numSolicitudes || 10;
+        }
+
+        if (intervaloInput) {
+          intervaloInput.value = config.intervalo || 100;
+        }
+      }
+    } catch (error) {
+      console.error("Error loading saved config:", error);
     }
   }
 
