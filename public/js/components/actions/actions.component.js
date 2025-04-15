@@ -71,19 +71,8 @@ export class ActionsComponent {
    * Set up event handlers for action buttons
    */
   setupEventHandlers() {
-    if (this.runNowBtn) {
-      this.runNowBtn.addEventListener("click", () => this.handleRunNow());
-    }
-
-    if (this.scheduleBtn) {
-      this.scheduleBtn.addEventListener("click", () =>
-        this.handleScheduleExecution()
-      );
-    }
-
-    if (this.stopBtn) {
-      this.stopBtn.addEventListener("click", () => this.handleStopExecution());
-    }
+    // No configuramos listeners aquí porque ya se manejan en App.js
+    // Los listeners aquí están causando llamadas duplicadas sin parámetros
   }
 
   /**
