@@ -273,7 +273,7 @@ export class UsersComponent {
           ${
             profile.userId.startsWith("custom_")
               ? `
-            <button class="delete-user-btn opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-500 hover:text-white">
+            <button class="delete-user-btn opacity-100 group-hover:opacity-100 transition-opacity duration-200 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-500 hover:text-white z-10">
               <i class="fas fa-times text-xs"></i>
             </button>
           `
