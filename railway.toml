@@ -6,4 +6,5 @@ buildCommand = "npm run build:css"
 startCommand = "npm start"
 healthcheckPath = "/"
 healthcheckTimeout = 100
-restartPolicyType = "on-failure"
+restartPolicyType = "always"
+restartPolicyMaxRetries = 10

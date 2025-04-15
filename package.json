@@ -13,7 +13,7 @@
     "build:css": "tailwindcss -i ./public/css/tailwind.css -o ./public/css/styles.output.css --minify",
     "watch:css": "tailwindcss -i ./public/css/tailwind.css -o ./public/css/styles.output.css --watch",
     "build": "npm run build:css",
-    "dev": "npm run watch:css & node index.js",
+    "dev": "nodemon index.js",
     "postinstall": "npm run build:css"
   },
   "keywords": [],
