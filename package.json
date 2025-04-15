@@ -9,7 +9,11 @@
   "scripts": {
     "start": "node index.js",
     "now": "node index.js --ahora",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "npx tailwindcss -i ./public/css/tailwind.css -o ./public/css/styles.output.css --minify",
+    "watch:css": "npx tailwindcss -i ./public/css/tailwind.css -o ./public/css/styles.output.css --watch",
+    "build": "npm run build:css && node index.js",
+    "dev": "npm run watch:css & node index.js"
   },
   "keywords": [],
   "author": "",

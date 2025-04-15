@@ -138,12 +138,54 @@
     @apply py-1 px-2 bg-gray-100 rounded flex items-center;
   }
 
+  /* Ajustes para la sección de Results */
   .results-container {
     @apply bg-gray-900 rounded-xl min-h-[200px] max-h-[400px] overflow-y-auto shadow-inner border border-black/10;
   }
 
+  /* Corregir color de texto para aumentar visibilidad en fondo oscuro */
   .results {
     @apply text-green-400 p-4 m-0 whitespace-pre-wrap font-mono leading-relaxed text-sm;
+  }
+
+  /* Estilos para mensajes en Results */
+  .message-content {
+    @apply break-words text-white-200; /* Añadir color claro al texto */
+  }
+
+  /* Asegurar que el texto del mensaje sea visible */
+  #resultsList {
+    @apply text-gray-200;
+  }
+
+  /* Hacer más visible el texto de "Results will be displayed here..." */
+  #resultsList .text-gray-500.italic {
+    @apply text-gray-400; /* Aclarar este texto de marcador de posición */
+  }
+
+  /* Mejorar la legibilidad de timestamps */
+  .text-primary {
+    @apply text-blue-400;
+  }
+
+  /* Para los contadores y textos de estado en búsqueda */
+  #searchResultsCount {
+    @apply text-gray-300; /* Aclarar el contador de resultados */
+  }
+
+  /* Para el texto en mensajes expandibles */
+  .message-details pre {
+    @apply text-gray-300 bg-gray-800/60; /* Ajustar color de texto en detalles */
+  }
+
+  /* Modo compacto, manteniendo texto visible */
+  .compact-mode .results-message {
+    @apply py-1 text-xs text-gray-200;
+  }
+
+  /* Asegurar que texto de filtros es legible */
+  .filter-menu label {
+    @apply text-gray-800; /* Este texto debe permanecer oscuro porque el fondo del menú es claro */
   }
 
   .status-section,
@@ -241,5 +283,101 @@
     @apply transform;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.2s ease-in-out, padding 0.3s ease-in-out;
+  }
+
+  /* Animaciones para mensajes */
+  @keyframes pulse-once {
+    0% {
+      @apply bg-white/5;
+    }
+    50% {
+      @apply bg-white/10;
+    }
+    100% {
+      @apply bg-transparent;
+    }
+  }
+
+  .animate-pulse-once {
+    animation: pulse-once 1.5s ease-out forwards;
+  }
+
+  /* Estilos para mensajes */
+  .message-content {
+    @apply break-words;
+  }
+
+  .expand-toggle:focus {
+    @apply outline-none;
+  }
+
+  /* Estilos para auto-scroll */
+  #autoScrollBtn.active i {
+    @apply text-primary;
+  }
+
+  /* Timestamp en mensajes */
+  .text-primary {
+    @apply text-blue-400;
+  }
+
+  /* Modo compacto */
+  .compact-mode .results-message {
+    @apply py-1 text-xs;
+  }
+
+  /* Corrección para hacer visible todo el texto en Results */
+
+  /* Texto de mensajes genéricos */
+  #resultsList {
+    @apply text-white !important;
+  }
+
+  /* Mensajes internos */
+  .message-content {
+    @apply text-white !important;
+  }
+
+  /* Texto específico en mensajes */
+  #resultsList div,
+  #resultsList span {
+    @apply text-white !important;
+  }
+
+  /* Mensajes de timestamp */
+  .message-timestamp {
+    @apply text-gray-300 !important;
+  }
+
+  /* Mensajes de información por tipo */
+  .message-info {
+    @apply text-white;
+  }
+
+  /* Texto del placeholder cuando no hay mensajes */
+  .text-gray-500.italic.text-center {
+    @apply text-gray-300 !important;
+  }
+
+  /* Para asegurar que los mensajes JSON y pre-formateados sean visibles */
+  pre,
+  code,
+  .message-details {
+    @apply text-white !important;
+  }
+
+  /* Para mensajes generados por la función addMessage */
+  #resultsList .text-gray-200 {
+    @apply text-white !important;
+  }
+
+  /* Elementos de texto simple que podrían estar usando la clase por defecto */
+  .results-message {
+    @apply text-white;
+  }
+
+  /* Para asegurar que las animaciones no afecten la visibilidad */
+  .animate-pulse-once {
+    @apply text-white;
   }
 }
