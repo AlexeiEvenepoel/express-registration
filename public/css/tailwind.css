@@ -30,14 +30,17 @@
 
   .card {
     @apply rounded-xl border border-gray-200 transition-shadow hover:shadow-lg overflow-hidden;
+    @apply flex flex-col h-full;
   }
 
   .card-header {
     @apply p-4 border-b border-gray-100;
+    @apply flex-none;
   }
 
   .card-body {
     @apply p-2;
+    @apply flex-1 flex flex-col;
   }
 
   .form-control {
@@ -379,5 +382,20 @@
   /* Para asegurar que las animaciones no afecten la visibilidad */
   .animate-pulse-once {
     @apply text-white;
+  }
+
+  /* Asegurar que las cards tengan la misma altura */
+  .grid > div {
+    @apply h-full flex flex-col;
+  }
+
+  /* La card de usuarios debe extenderse completamente */
+  #usersContainer > div {
+    @apply h-full flex flex-col;
+  }
+
+  /* El contenedor de usuarios debe ocupar todo el espacio disponible */
+  #userList {
+    @apply flex-1;
   }
 }

@@ -44,23 +44,29 @@
       <!-- Main Content -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Users Component - Left Column -->
-        <div id="usersContainer"></div>
+        <div id="usersContainer" class="h-full"></div>
 
         <!-- Actions & Settings - Right Column -->
         <div
-          class="card rounded-xl border border-gray-200 hover:shadow-lg overflow-hidden h-full"
+          class="card rounded-xl border border-gray-200 hover:shadow-lg overflow-hidden h-full flex flex-col"
         >
           <div
-            class="card-header p-4 border-b border-gray-100 bg-gradient-to-r from-success to-green-600 text-white"
+            class="card-header py-1.5 px-3 border-b border-gray-100 bg-gradient-to-r from-success to-green-600 text-white"
           >
-            <h3 class="text-xl font-semibold mb-0">Actions & Settings</h3>
+            <div class="flex items-center gap-2">
+              <i class="fas fa-sliders-h text-sm"></i>
+              <div>
+                <h3 class="text-sm font-semibold mb-0">Actions & Settings</h3>
+                <span class="text-white/80 text-[10px]">Configuration</span>
+              </div>
+            </div>
           </div>
-          <div class="card-body p-6 flex flex-col">
+          <div class="card-body p-6 flex-1 flex flex-col">
             <!-- Config Component -->
             <div id="configContainer"></div>
 
             <!-- Actions Component -->
-            <div id="actionsContainer"></div>
+            <div id="actionsContainer" class="mt-auto"></div>
           </div>
         </div>
       </div>
