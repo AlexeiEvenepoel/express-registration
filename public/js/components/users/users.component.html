@@ -53,10 +53,10 @@
       </button>
     </div>
 
-    <!-- User List Container - Grid 2x2 -->
+    <!-- User List Container - Con altura fija y scroll automático -->
     <div
       id="userList"
-      class="grid grid-cols-2 gap-1.5 overflow-y-auto pr-1 custom-scrollbar"
+      class="grid grid-cols-2 gap-1.5 overflow-y-auto pr-1 custom-scrollbar max-h-[calc(100vh-300px)] min-h-[200px]"
     >
       <!-- Users will be generated dynamically -->
     </div>
@@ -191,9 +191,15 @@
 </div>
 
 <style>
-  /* Custom scrollbar styles */
+  /* Custom scrollbar styles optimized */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f1f1f1;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
@@ -210,15 +216,15 @@
     background-color: #9ca3af;
   }
 
-  /* Animation for new users */
+  /* Mejora la animación para nuevos usuarios con escala */
   @keyframes slideInUp {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(20px) scale(0.95);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
   }
 
@@ -226,18 +232,23 @@
     animation: slideInUp 0.3s ease-out forwards;
   }
 
-  /* Checkbox styles */
-  input[type="checkbox"] {
-    position: relative;
-    cursor: pointer;
+  /* Ajusta la grid para responsividad en pantallas pequeñas */
+  @media (max-width: 640px) {
+    #userList {
+      grid-template-columns: 1fr;
+    }
   }
 
-  input[type="checkbox"]:checked {
-    border-color: theme("colors.primary");
-    background-color: theme("colors.primary");
+  /* Ajuste dinámico de altura para diferentes tamaños de pantalla */
+  @media (max-height: 768px) {
+    #userList {
+      max-height: calc(100vh - 250px);
+    }
   }
 
-  input[type="checkbox"]:checked:focus {
-    box-shadow: 0 0 0 2px theme("colors.primary" / 20%);
+  @media (min-height: 1024px) {
+    #userList {
+      max-height: 500px;
+    }
   }
 </style>

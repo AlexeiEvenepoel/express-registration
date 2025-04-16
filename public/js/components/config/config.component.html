@@ -22,34 +22,39 @@
     id="configBody"
   >
     <form id="configForm" class="mb-3 relative mt-2">
-      <div class="grid gap-4">
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label
-              for="numSolicitudes"
-              class="block font-medium text-gray-700 mb-0.5 text-sm"
-            >
-              Number of Requests
-            </label>
+      <div class="flex items-start gap-4">
+        <!-- Number of Requests -->
+        <div class="flex-1">
+          <label
+            for="numSolicitudes"
+            class="block font-medium text-gray-700 mb-2 text-sm"
+          >
+            Number of Requests
+          </label>
+          <div class="relative">
             <input
               type="number"
-              class="w-full rounded-lg px-3 py-1.5 border border-gray-300 text-center font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              class="w-full h-10 rounded-lg px-3 border border-gray-300 text-center font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary"
               id="numSolicitudes"
               min="1"
               max="100"
               value="10"
             />
           </div>
-          <div>
-            <label
-              for="intervalo"
-              class="block font-medium text-gray-700 mb-0.5 text-sm"
-            >
-              Interval (ms)
-            </label>
+        </div>
+
+        <!-- Interval -->
+        <div class="flex-1">
+          <label
+            for="intervalo"
+            class="block font-medium text-gray-700 mb-2 text-sm"
+          >
+            Interval (ms)
+          </label>
+          <div class="relative">
             <input
               type="number"
-              class="w-full rounded-lg px-3 py-1.5 border border-gray-300 text-center font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              class="w-full h-10 rounded-lg px-3 border border-gray-300 text-center font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary"
               id="intervalo"
               min="50"
               max="1000"
@@ -57,13 +62,20 @@
             />
           </div>
         </div>
-        <button
-          type="submit"
-          class="save-config-btn flex items-center justify-center gap-2 w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
-        >
-          <i class="fas fa-save"></i>
-          <span class="font-medium">Save Config</span>
-        </button>
+
+        <!-- Save Button -->
+        <div class="flex-1">
+          <label class="block font-medium text-transparent mb-2 text-sm">
+            Actions
+          </label>
+          <button
+            type="submit"
+            class="save-config-btn w-full h-10 flex items-center justify-center gap-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <i class="fas fa-save text-[16px]"></i>
+            <span class="font-medium text-sm">Save Config</span>
+          </button>
+        </div>
       </div>
     </form>
   </div>
