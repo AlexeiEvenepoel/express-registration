@@ -10,6 +10,27 @@ let programacionesActivas = new Map(); // userId -> boolean
 let programacionesFecha = new Map(); // userId -> fecha programada
 
 /**
+ * Formatea una fecha usando la zona horaria de Perú
+ * @param {Date} fecha - Fecha a formatear
+ * @returns {string} - Fecha formateada en hora de Perú
+ */
+function formatearFechaPeruana(fecha) {
+  // Opciones de formato para la zona horaria de Perú
+  const options = {
+    timeZone: "America/Lima",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false,
+  };
+
+  return fecha.toLocaleString("es-PE", options);
+}
+
+/**
  * Programa una tarea para ejecutarse en una fecha específica para un usuario o usuarios específicos
  * @param {Array<string>} userIds - IDs de los usuarios
  * @param {Date} fechaHora - Fecha y hora de ejecución
@@ -26,11 +47,14 @@ function programarEjecucion(userIds, fechaHora) {
     return;
   }
 
-  // Obtener componentes de la fecha
-  const minuto = fechaHora.getMinutes();
-  const hora = fechaHora.getHours();
-  const dia = fechaHora.getDate();
-  const mes = fechaHora.getMonth() + 1; // JavaScript meses son 0-11
+  // Obtener componentes de la fecha desde la zona horaria de Perú
+  const fechaPeruana = new Date(
+    fechaHora.toLocaleString("en-US", { timeZone: "America/Lima" })
+  );
+  const minuto = fechaPeruana.getMinutes();
+  const hora = fechaPeruana.getHours();
+  const dia = fechaPeruana.getDate();
+  const mes = fechaPeruana.getMonth() + 1; // JavaScript meses son 0-11
 
   // Formato cron: segundos minutos horas día-del-mes mes día-de-la-semana
   const cronExpression = `0 ${minuto} ${hora} ${dia} ${mes} *`;
@@ -79,17 +103,22 @@ function programarEjecucion(userIds, fechaHora) {
     programacionesFecha.set(userId, fechaHora);
 
     console.log(
-      `[Usuario ${userId}] Solicitud programada para: ${fechaHora.toLocaleString()} (${cronExpression})`
+      `[Usuario ${userId}] Solicitud programada para: ${formatearFechaPeruana(
+        fechaHora
+      )} (${cronExpression})`
     );
   });
+
+  // Usar la función de formato para asegurar hora peruana
+  const fechaFormateada = formatearFechaPeruana(fechaHora);
 
   sendToAllClients({
     message: `Programación confirmada en el servidor para ${
       userIds.length
-    } usuarios: ${userIds.join(", ")} - Fecha: ${fechaHora.toLocaleString()}`,
+    } usuarios: ${userIds.join(", ")} - Fecha: ${fechaFormateada}`,
     status: {
       type: "scheduled",
-      text: `Programado para: ${fechaHora.toLocaleString()}`,
+      text: `Programado para: ${fechaFormateada}`,
     },
     scheduledUsers: userIds,
     scheduleTime: fechaHora.toISOString(),
@@ -99,8 +128,9 @@ function programarEjecucion(userIds, fechaHora) {
   const tareaGrupal = cron.schedule(
     cronExpression,
     () => {
+      const ahoraPeruana = formatearFechaPeruana(new Date());
       console.log(
-        `¡Es hora! Ejecutando solicitudes programadas a las ${new Date().toLocaleTimeString()} para usuarios: ${userIds.join(
+        `¡Es hora! Ejecutando solicitudes programadas a las ${ahoraPeruana} para usuarios: ${userIds.join(
           ", "
         )}`
       );
@@ -129,7 +159,7 @@ function programarEjecucion(userIds, fechaHora) {
     },
     {
       scheduled: true,
-      timezone: timezone, // Zona horaria configurada
+      timezone: "America/Lima", // Zona horaria explícita del Perú
     }
   );
 

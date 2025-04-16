@@ -1,557 +1,164 @@
 /**
- * Aplicación principal del sistema de registro automatizado
+ * Main App Controller
+ * Connects and orchestrates all components
  */
-import {
-  profiles,
-  profilesList,
-  saveGlobalConfig,
-  loadGlobalConfig,
-  saveUserConfigs,
-  loadUserConfigs,
-  saveSelectedUsers,
-  loadSelectedUsers,
-  initializeUserConfigs,
-  addCustomUser,
-  loadCustomUsers,
-  removeCustomUser,
-} from "./utils/profiles.js";
-import {
-  runNowRequest,
-  scheduleRequest,
-  cancelSchedule,
-  stopExecution,
-  saveUserConfigs as apiSaveUserConfigs,
-  setupEventSource,
-} from "./services/api-service.js";
-import {
-  initClock,
-  setStatus,
-  setUserStatus,
-  addToResults,
-  clearResults,
-  formatDate,
-  renderUserList,
-} from "./components/ui-components.js";
+import { HeaderComponent } from "./components/header/header.component.js";
+import { UsersComponent } from "./components/users/users.component.js";
+import { ConfigComponent } from "./components/config/config.component.js";
+import { ActionsComponent } from "./components/actions/actions.component.js";
+import { ResultsComponent } from "./components/results/results.component.js";
+import { setupEventSource } from "./services/api-service.js";
+import { formatDate } from "./utils/ui-utils.js";
+import { initializeUserConfigs, saveUserConfigs } from "./utils/profiles.js";
 
-console.log("Perfiles disponibles:", profiles);
-console.log("Lista de perfiles:", profilesList);
-
-// Verificación adicional para asegurar que los perfiles se cargan
-window.addEventListener("load", () => {
-  console.log("Perfiles después de cargar la página:", profiles);
-  console.log("Lista de perfiles después de cargar:", profilesList);
-
-  // Intenta renderizar directamente
-  console.log(
-    "Intentando renderizado directo con:",
-    Object.values(profiles).filter((p) => p.userId !== "custom")
-  );
-});
-
-document.addEventListener("DOMContentLoaded", function () {
-  // Referencias a elementos DOM
-  const clockElement = document.getElementById("clock");
-  const numSolicitudesInput = document.getElementById("numSolicitudes");
-  const intervaloInput = document.getElementById("intervalo");
-  const horaInicioInput = document.getElementById("horaInicio");
-  const scheduleDateInput = document.getElementById("scheduleDateInput");
-  const configForm = document.getElementById("configForm");
-  const configBody = document.getElementById("configBody");
-  const configToggle = document.getElementById("configToggle");
-  const runNowBtn = document.getElementById("runNowBtn");
-  const scheduleBtn = document.getElementById("scheduleBtn");
-  const stopBtn = document.getElementById("stopBtn");
-  const statusElement = document.getElementById("status");
-  const nextExecutionElement = document.getElementById("nextExecution");
-  const resultsElement = document.getElementById("results");
-  const clearResultsBtn = document.getElementById("clearResultsBtn");
-  const userListContainer = document.getElementById("userList");
-  const customUserForm = document.getElementById("customUserForm");
-  const addUserBtn = document.getElementById("addUserBtn");
-  const addUserModal = document.getElementById("addUserModal");
-  const runBadge = document.getElementById("runBadge");
-
-  // Estado de la aplicación
-  const appState = {
-    isRunning: false,
-    isScheduled: false,
-    scheduleTime: null,
-    selectedUsers: [],
-    userConfigs: {},
-    userStates: {},
-  };
-
-  // Establecer fecha de hoy en el selector de fecha
-  const today = new Date();
-  scheduleDateInput.valueAsDate = today;
-
-  // Inicializar reloj
-  initClock(clockElement);
-
-  // Manejar la expansión/colapso de la configuración aquí, antes de llamar a loadSavedConfig
-  if (configToggle && configBody) {
-    // Expandir por defecto al cargar la página
-    setTimeout(() => {
-      configBody.style.maxHeight = configBody.scrollHeight + "px";
-    }, 100);
-
-    configToggle.addEventListener("click", function () {
-      console.log("Toggle clicked");
-      const isExpanded = configBody.classList.contains("expanded");
-
-      if (isExpanded) {
-        configBody.style.maxHeight = "0px";
-        setTimeout(() => {
-          configBody.classList.remove("expanded");
-        }, 10);
-      } else {
-        configBody.classList.add("expanded");
-        configBody.style.maxHeight = configBody.scrollHeight + "px";
-      }
-
-      const icon = configToggle.querySelector("i");
-      if (icon) {
-        icon.classList.toggle("collapsed");
-      }
-    });
-  } else {
-    console.error("No se encontraron elementos de configuración");
-  }
-
-  // Actualizar el badge del botón Run Now
-  if (runBadge) {
-    numSolicitudesInput.addEventListener("input", function () {
-      runBadge.textContent = this.value;
-    });
-
-    // Inicializar el badge con el valor inicial
-    runBadge.textContent = numSolicitudesInput.value;
-  }
-
-  // Ahora cargar configuración guardada después de inicializar todas las referencias
-  loadSavedConfig();
-
-  // Eventos de los botones
-  configForm.addEventListener("submit", handleSaveConfig);
-  runNowBtn.addEventListener("click", handleRunNow);
-  scheduleBtn.addEventListener("click", handleScheduleExecution);
-  stopBtn.addEventListener("click", handleStopExecution);
-  clearResultsBtn.addEventListener("click", () => clearResults(resultsElement));
-
-  // Manejar el formulario de usuario personalizado
-  customUserForm.addEventListener("submit", async function (event) {
-    event.preventDefault();
-
-    const userData = {
-      name: document.getElementById("customUserName").value,
-      dni: document.getElementById("customUserDni").value,
-      codigo: document.getElementById("customUserCode").value,
+class App {
+  constructor() {
+    // Initialize state
+    this.appState = {
+      isRunning: false,
+      isScheduled: false,
+      scheduleTime: null,
+      selectedUsers: [],
+      userConfigs: {},
+      userStates: {},
     };
 
-    try {
-      const userId = addCustomUser(userData);
-
-      // Actualizar configuraciones
-      appState.userConfigs[userId] = {
-        dni: userData.dni,
-        codigo: userData.codigo,
-      };
-
-      // Guardar configuraciones
-      saveUserConfigs(appState.userConfigs);
-
-      // Actualizar UI
-      addToResults(
-        resultsElement,
-        `✅ Usuario personalizado añadido: ${userData.name}`
-      );
-
-      // Cerrar modal
-      const modal = bootstrap.Modal.getInstance(addUserModal);
-      if (modal) {
-        modal.hide();
-      }
-
-      // Limpiar formulario
-      customUserForm.reset();
-
-      // Recargar lista de usuarios con animación para nuevos usuarios
-      const customUsers = loadCustomUsers();
-      const allProfiles = [...profilesList, ...Object.values(customUsers)];
-
-      renderUserList(
-        userListContainer,
-        allProfiles,
-        appState.selectedUsers,
-        appState.userStates,
-        handleUserSelect,
-        userId // Pasar el ID del nuevo usuario para resaltarlo
-      );
-    } catch (error) {
-      // Mostrar error en el modal en lugar de los resultados
-      const errorFeedback = document.createElement("div");
-      errorFeedback.className = "alert alert-danger mt-3";
-      errorFeedback.textContent = error.message;
-
-      // Eliminar cualquier error existente
-      const existingError = customUserForm.querySelector(".alert");
-      if (existingError) {
-        existingError.remove();
-      }
-
-      customUserForm.appendChild(errorFeedback);
-
-      // También registrar en los resultados
-      addToResults(
-        resultsElement,
-        `❌ Error al añadir usuario: ${error.message}`
-      );
-    }
-  });
-
-  // Limpiar formulario cuando se cierre el modal
-  addUserModal.addEventListener("hidden.bs.modal", function () {
-    customUserForm.reset();
-    const existingError = customUserForm.querySelector(".alert");
-    if (existingError) {
-      existingError.remove();
-    }
-  });
-
-  /**
-   * Carga configuración desde localStorage
-   */
-  function loadSavedConfig() {
-    // Cargar configuración global
-    const globalConfig = loadGlobalConfig();
-
-    // Cargar valores globales
-    numSolicitudesInput.value = globalConfig.numSolicitudes || 10;
-    intervaloInput.value = globalConfig.intervalo || 100;
-    horaInicioInput.value = globalConfig.horaInicio || "07:00";
-
-    // Actualizar badge
-    if (runBadge) {
-      runBadge.textContent = numSolicitudesInput.value;
-    }
-
-    // Cargar configuraciones de usuario
-    appState.userConfigs = initializeUserConfigs();
-
-    // Cargar selección de usuarios
-    appState.selectedUsers = loadSelectedUsers();
-
-    // Cargar usuarios personalizados y mostrar lista combinada
-    const customUsers = loadCustomUsers();
-
-    // ES IMPORTANTE: Usar Object.values(profiles) en lugar de profilesList
-    const allProfiles = [
-      ...Object.values(profiles),
-      ...Object.values(customUsers),
-    ];
-    console.log("Total perfiles combinados:", allProfiles.length);
-
-    // Renderizar usuarios, excluyendo el perfil "custom" (plantilla)
-    const usableProfiles = allProfiles.filter((p) => p.userId !== "custom");
-    console.log("Perfiles a renderizar:", usableProfiles.length);
-
-    // Renderizar lista de usuarios incluyendo los personalizados
-    renderUserList(
-      userListContainer,
-      usableProfiles,
-      appState.selectedUsers,
-      appState.userStates,
-      handleUserSelect
+    // Create components
+    this.resultsComponent = new ResultsComponent();
+    this.headerComponent = new HeaderComponent();
+    this.usersComponent = new UsersComponent();
+    this.configComponent = new ConfigComponent((message) =>
+      this.resultsComponent.addMessage(message)
+    );
+    this.actionsComponent = new ActionsComponent((message) =>
+      this.resultsComponent.addMessage(message)
     );
 
-    // Expandir configuración por defecto
-    if (configBody) {
-      configBody.classList.add("expanded");
-    }
+    // Initialize server connection
+    this.eventSource = null;
   }
 
   /**
-   * Maneja la selección de un usuario
-   * @param {string} userId - ID del usuario
-   * @param {boolean} isSelected - Si está seleccionado
+   * Initialize the application
    */
-  function handleUserSelect(userId, isSelected) {
-    if (isSelected && !appState.selectedUsers.includes(userId)) {
-      appState.selectedUsers.push(userId);
-    } else if (!isSelected) {
-      appState.selectedUsers = appState.selectedUsers.filter(
-        (id) => id !== userId
+  init() {
+    // Wait for both DOM content and components to be loaded
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () =>
+        this.waitForComponents()
       );
-    }
-
-    // Guardar usuarios seleccionados
-    saveSelectedUsers(appState.selectedUsers);
-  }
-
-  /**
-   * Guarda la configuración global en localStorage
-   * @param {Event} event - Evento del formulario
-   */
-  function handleSaveConfig(event) {
-    event.preventDefault();
-
-    const globalConfig = {
-      numSolicitudes: parseInt(numSolicitudesInput.value, 10),
-      intervalo: parseInt(intervaloInput.value, 10),
-      horaInicio: horaInicioInput.value,
-    };
-
-    console.log("Guardando configuración global:", globalConfig);
-
-    // Guardar configuración global
-    if (saveGlobalConfig(globalConfig)) {
-      addToResults(
-        resultsElement,
-        `✅ Configuración global guardada correctamente: ${globalConfig.numSolicitudes} solicitudes, ${globalConfig.intervalo}ms`
-      );
-
-      // Guardar configuraciones en el servidor
-      apiSaveUserConfigs(appState.userConfigs, globalConfig)
-        .then((response) => {
-          if (response.success) {
-            console.log(
-              "Configuración sincronizada con el servidor:",
-              response
-            );
-            addToResults(
-              resultsElement,
-              "✅ Configuraciones sincronizadas con el servidor"
-            );
-          }
-        })
-        .catch((error) => {
-          addToResults(
-            resultsElement,
-            `❌ Error al sincronizar con el servidor: ${error.message}`
-          );
-        });
     } else {
-      addToResults(
-        resultsElement,
-        "❌ Error al guardar la configuración global"
-      );
+      this.waitForComponents();
     }
   }
 
   /**
-   * Ejecuta solicitudes inmediatamente para los usuarios seleccionados
+   * Wait for component templates to be loaded
    */
-  async function handleRunNow() {
-    if (appState.selectedUsers.length === 0) {
-      addToResults(resultsElement, "❌ Debe seleccionar al menos un usuario");
-      return;
-    }
-
-    setStatus(statusElement, "active", "Ejecutando solicitudes...");
-    appState.isRunning = true;
-
-    try {
-      // Obtener configuración global y asegurarse que los valores sean números
-      const globalConfig = {
-        numSolicitudes: parseInt(numSolicitudesInput.value, 10),
-        intervalo: parseInt(intervaloInput.value, 10),
-        horaInicio: horaInicioInput.value,
-      };
-
-      // Primero guardar la configuración antes de ejecutar
-      await apiSaveUserConfigs(appState.userConfigs, globalConfig);
-
-      // Llamada a la API para ejecutar ahora
-      const data = await runNowRequest(
-        appState.selectedUsers,
-        globalConfig,
-        appState.userConfigs
-      );
-
-      addToResults(
-        resultsElement,
-        `✅ Solicitud de ejecución enviada para ${
-          appState.selectedUsers.length
-        } usuarios: ${appState.selectedUsers.join(", ")}`
-      );
-
-      if (data.success) {
-        addToResults(
-          resultsElement,
-          `📊 ${data.message || "Proceso iniciado"}`
-        );
-      } else {
-        setStatus(statusElement, "error", "Error al ejecutar");
-        addToResults(
-          resultsElement,
-          `❌ Error: ${data.error || "Error desconocido"}`
-        );
-      }
-    } catch (error) {
-      setStatus(statusElement, "error", "Error de conexión");
-      addToResults(resultsElement, `❌ Error: ${error.message}`);
+  waitForComponents() {
+    // Check if components are already loaded
+    if (document.getElementById("headerContainer")?.children.length > 0) {
+      this.initializeApp();
+    } else {
+      // Wait for components loaded event
+      document.addEventListener("componentsLoaded", () => this.initializeApp());
     }
   }
 
   /**
-   * Programa ejecución para usuarios seleccionados en una fecha y hora específicas
+   * Initialize the application after components are loaded
    */
-  async function handleScheduleExecution() {
-    if (appState.selectedUsers.length === 0) {
-      addToResults(resultsElement, "❌ Debe seleccionar al menos un usuario");
-      return;
-    }
+  initializeApp() {
+    console.log("Initializing application...");
 
-    const horaInicio = horaInicioInput.value;
-    const scheduleDate = scheduleDateInput.value;
+    // Load configurations
+    this.loadConfigs();
 
-    if (!horaInicio || !scheduleDate) {
-      addToResults(resultsElement, "❌ Debe ingresar una fecha y hora válidas");
-      return;
-    }
+    // Initialize components
+    this.resultsComponent.init();
+    this.headerComponent.init();
+    this.usersComponent.init();
+    this.configComponent.init();
+    this.actionsComponent.init();
 
-    // Calcular la fecha y hora de la próxima ejecución
-    const [hours, minutes] = horaInicio.split(":").map(Number);
+    // Connect component events
+    this.connectComponents();
 
-    // Crear una nueva fecha con la fecha seleccionada para evitar problemas de zona horaria
-    const dateParts = scheduleDate.split("-").map(Number);
-    const selectedDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-
-    // Establecer la hora en la fecha seleccionada
-    selectedDate.setHours(hours, minutes, 0, 0);
-
-    // Verificar que la fecha sea futura
-    if (selectedDate < new Date()) {
-      addToResults(
-        resultsElement,
-        "⚠️ Advertencia: La fecha y hora seleccionada ya pasó. Seleccione una futura."
-      );
-      return;
-    }
-
-    appState.scheduleTime = selectedDate;
-    appState.isScheduled = true;
-
-    // Mostrar la fecha y hora programadas
-    const formattedDate = formatDate(selectedDate);
-
-    setStatus(statusElement, "scheduled", "Programado");
-    nextExecutionElement.textContent = `Próxima ejecución: ${formattedDate}`;
-    addToResults(
-      resultsElement,
-      `🕒 Ejecución programada para ${appState.selectedUsers.length} usuarios a las ${formattedDate}`
-    );
-
-    try {
-      // Obtener configuración global con valores numéricos explícitos
-      const globalConfig = {
-        numSolicitudes: parseInt(numSolicitudesInput.value, 10),
-        intervalo: parseInt(intervaloInput.value, 10),
-        horaInicio: horaInicioInput.value,
-      };
-
-      // Primero guardar la configuración antes de programar
-      await apiSaveUserConfigs(appState.userConfigs, globalConfig);
-
-      console.log("Programando con config global:", globalConfig);
-
-      // Guardar en el servidor
-      const data = await scheduleRequest(
-        appState.selectedUsers,
-        globalConfig,
-        appState.userConfigs,
-        selectedDate
-      );
-
-      if (!data.success) {
-        addToResults(
-          resultsElement,
-          `⚠️ Advertencia: ${data.error || "Error al guardar en servidor"}`
-        );
-      }
-    } catch (error) {
-      addToResults(resultsElement, `⚠️ Advertencia: ${error.message}`);
-    }
+    // Set up server updates
+    this.setupServerUpdates();
   }
 
   /**
-   * Detiene la ejecución programada o en curso
+   * Load application configurations
    */
-  async function handleStopExecution() {
-    if (appState.selectedUsers.length === 0) {
-      addToResults(
-        resultsElement,
-        "❌ Debe seleccionar al menos un usuario para detener"
-      );
-      return;
-    }
-
-    try {
-      // Cancelar en el servidor
-      const response = await stopExecution(appState.selectedUsers);
-
-      if (response.success) {
-        setStatus(statusElement, "inactive", "Inactivo");
-        nextExecutionElement.textContent = "";
-
-        addToResults(
-          resultsElement,
-          `🛑 Ejecución detenida para ${
-            appState.selectedUsers.length
-          } usuarios: ${appState.selectedUsers.join(", ")}`
-        );
-
-        // Si había una programación, cancelarla también
-        if (appState.isScheduled) {
-          const cancelResponse = await cancelSchedule(appState.selectedUsers);
-          if (cancelResponse.success) {
-            appState.isScheduled = false;
-            appState.scheduleTime = null;
-            addToResults(
-              resultsElement,
-              "🛑 Programación también ha sido cancelada"
-            );
-          }
-        }
-      } else {
-        addToResults(
-          resultsElement,
-          `⚠️ ${response.message || "No se pudo detener la ejecución"}`
-        );
-      }
-    } catch (error) {
-      addToResults(resultsElement, `❌ Error al detener: ${error.message}`);
-    }
+  loadConfigs() {
+    // Initialize user configurations
+    this.appState.userConfigs = initializeUserConfigs();
   }
 
   /**
-   * Configura el listener para recibir actualizaciones del servidor
+   * Connect component events for interaction
    */
-  function setupServerUpdates() {
+  connectComponents() {
+    // Connect Run Now button
+    this.actionsComponent.runNowBtn.addEventListener("click", () => {
+      this.actionsComponent.handleRunNow(
+        this.usersComponent.selectedUsers,
+        this.configComponent.getGlobalConfig(),
+        this.appState.userConfigs
+      );
+    });
+
+    // Connect Schedule button
+    this.actionsComponent.scheduleBtn.addEventListener("click", () => {
+      this.actionsComponent.handleScheduleExecution(
+        this.usersComponent.selectedUsers,
+        this.configComponent.getGlobalConfig(),
+        this.appState.userConfigs
+      );
+    });
+
+    // Connect Stop button
+    this.actionsComponent.stopBtn.addEventListener("click", () => {
+      this.actionsComponent.handleStopExecution(
+        this.usersComponent.selectedUsers
+      );
+    });
+
+    // Connect user selection changes to update Run Now badge
+    this.usersComponent.onUserSelectionChange = (selectedUsers) => {
+      this.actionsComponent.updateRunBadge(selectedUsers.length);
+    };
+  }
+
+  /**
+   * Set up connection to receive server updates
+   */
+  setupServerUpdates() {
     setupEventSource(
-      // Manejador de mensajes
+      // Message handler
       (data) => {
-        // Manejar el estado inicial cuando se conecta
+        // Handle initial state when connecting
         if (data.initialState) {
-          // Recuperar configuraciones de usuarios del servidor si están disponibles
+          // Get user configs from server if available
           if (data.initialState.usersConfig) {
-            appState.userConfigs = {
-              ...appState.userConfigs,
+            this.appState.userConfigs = {
+              ...this.appState.userConfigs,
               ...data.initialState.usersConfig,
             };
 
-            // Guardar localmente
-            saveUserConfigs(appState.userConfigs);
+            // Save locally
+            saveUserConfigs(this.appState.userConfigs);
           }
 
-          // Recuperar usuarios programados
+          // Get scheduled users
           if (
             data.initialState.scheduledUsers &&
             data.initialState.scheduledUsers.length > 0
           ) {
             const scheduledUsers = data.initialState.scheduledUsers;
 
-            // Actualizar estados de los usuarios programados
+            // Update user states for scheduled users
             const scheduleInfo = data.initialState.scheduleInfo || {};
             let scheduleTimeStr = null;
 
@@ -562,134 +169,107 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
                 scheduleTimeStr = scheduleTimeStr || scheduleTime;
 
-                // Actualizar estado del usuario
-                appState.userStates[userId] = {
-                  type: "scheduled",
-                  text: `Programado para: ${formatDate(scheduleTime)}`,
-                };
+                // Update user state
+                this.usersComponent.updateUserStatus(
+                  userId,
+                  "scheduled",
+                  `Scheduled for: ${formatDate(scheduleTime)}`
+                );
               }
             });
 
-            // Si hay al menos un usuario programado, actualizar el estado general
+            // Update general status if at least one user is scheduled
             if (scheduleTimeStr) {
-              appState.isScheduled = true;
-              appState.scheduleTime = scheduleTimeStr;
-              setStatus(statusElement, "scheduled", "Programado");
-              nextExecutionElement.textContent = `Próxima ejecución: ${formatDate(
-                scheduleTimeStr
-              )}`;
+              this.appState.isScheduled = true;
+              this.appState.scheduleTime = scheduleTimeStr;
+              this.actionsComponent.setStatus("scheduled", "Scheduled");
 
-              addToResults(
-                resultsElement,
-                `🔄 Recuperada programación para ${scheduledUsers.length} usuarios`
+              if (this.actionsComponent.nextExecutionElement) {
+                this.actionsComponent.nextExecutionElement.textContent = `Next execution: ${formatDate(
+                  scheduleTimeStr
+                )}`;
+              }
+
+              this.resultsComponent.addMessage(
+                `🔄 Recovered schedule for ${scheduledUsers.length} users`
               );
             }
 
-            // Re-renderizar lista de usuarios con sus estados
-            const customUsers = loadCustomUsers();
-            const allProfiles = [
-              ...profilesList,
-              ...Object.values(customUsers),
-            ];
-            renderUserList(
-              userListContainer,
-              allProfiles,
-              appState.selectedUsers,
-              appState.userStates,
-              handleUserSelect
-            );
+            // Re-render user list with states
+            this.usersComponent.renderUserList();
           }
         }
 
-        // Procesar mensaje normal
+        // Process regular message
         if (data.message) {
-          addToResults(resultsElement, data.message);
+          this.resultsComponent.addMessage(data.message);
         }
 
-        // Actualizar estado global
+        // Update global status
         if (data.status) {
-          setStatus(statusElement, data.status.type, data.status.text);
+          this.actionsComponent.setStatus(data.status.type, data.status.text);
         }
 
-        // Actualizar estado de un usuario específico
+        // Update specific user status
         if (data.userId) {
-          appState.userStates[data.userId] = {
-            type: data.status ? data.status.type : "inactive",
-            text: data.status ? data.status.text : "Inactivo",
-          };
-
-          setUserStatus(
+          this.usersComponent.updateUserStatus(
             data.userId,
-            appState.userStates[data.userId].type,
-            appState.userStates[data.userId].text
+            data.status ? data.status.type : "inactive",
+            data.status ? data.status.text : "Inactive"
           );
         }
 
-        // Usuarios que han sido programados
+        // Handle users that have been scheduled
         if (data.scheduledUsers) {
           const scheduleTime = data.scheduleTime
             ? new Date(data.scheduleTime)
             : null;
+
           if (scheduleTime) {
             data.scheduledUsers.forEach((userId) => {
-              appState.userStates[userId] = {
-                type: "scheduled",
-                text: `Programado para: ${formatDate(scheduleTime)}`,
-              };
+              this.usersComponent.updateUserStatus(
+                userId,
+                "scheduled",
+                `Scheduled for: ${formatDate(scheduleTime)}`
+              );
             });
 
-            // Re-renderizar lista de usuarios
-            const customUsers = loadCustomUsers();
-            const allProfiles = [
-              ...profilesList,
-              ...Object.values(customUsers),
-            ];
-            renderUserList(
-              userListContainer,
-              allProfiles,
-              appState.selectedUsers,
-              appState.userStates,
-              handleUserSelect
-            );
+            // Re-render user list
+            this.usersComponent.renderUserList();
           }
         }
 
-        // Usuarios cuya programación ha sido cancelada
+        // Handle users whose schedule has been cancelled
         if (data.cancelledUsers) {
           data.cancelledUsers.forEach((userId) => {
-            appState.userStates[userId] = {
-              type: "inactive",
-              text: "Inactivo",
-            };
+            this.usersComponent.updateUserStatus(
+              userId,
+              "inactive",
+              "Inactive"
+            );
           });
 
-          // Re-renderizar lista de usuarios
-          const customUsers = loadCustomUsers();
-          const allProfiles = [...profilesList, ...Object.values(customUsers)];
-          renderUserList(
-            userListContainer,
-            allProfiles,
-            appState.selectedUsers,
-            appState.userStates,
-            handleUserSelect
-          );
+          // Re-render user list
+          this.usersComponent.renderUserList();
         }
 
-        // Si es un mensaje de finalización
+        // Handle completion message
         if (data.complete) {
-          if (!appState.isScheduled) {
-            setStatus(statusElement, "inactive", "Inactivo");
+          if (!this.appState.isScheduled) {
+            this.actionsComponent.setStatus("inactive", "Inactive");
           }
         }
       },
-      // Manejador de errores
+
+      // Error handler
       () => {
-        // Reintentar cada 5 segundos
-        setTimeout(setupServerUpdates, 5000);
+        // Retry every 5 seconds
+        setTimeout(() => this.setupServerUpdates(), 5000);
       }
     );
   }
+}
 
-  // Iniciar escucha de eventos del servidor
-  setupServerUpdates();
-});
+// Create and initialize the application
+const app = new App();
+app.init();

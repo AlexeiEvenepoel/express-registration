@@ -1,0 +1,82 @@
+<div class="config-compact mb-2 border-b border-gray-200 pb-2">
+  <div
+    class="config-header cursor-pointer p-3 rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center"
+    id="configToggle"
+  >
+    <h4 class="text-primary font-semibold text-base flex items-center m-0">
+      <i class="fas fa-cog mr-2 transition-transform duration-300"></i>
+      Configuration
+    </h4>
+    <div class="flex items-center gap-2">
+      <button
+        class="pin-config-btn text-gray-400 hover:text-primary transition-colors"
+        title="Pin configuration"
+      >
+        <i class="fas fa-thumbtack rotate-45"></i>
+      </button>
+      <small class="text-gray-500">Click to expand/collapse</small>
+    </div>
+  </div>
+  <div
+    class="config-body max-h-0 overflow-hidden transition-all duration-300 px-3 opacity-0"
+    id="configBody"
+  >
+    <form id="configForm" class="mb-3 relative mt-2">
+      <div class="flex items-start gap-4">
+        <!-- Number of Requests -->
+        <div class="flex-1">
+          <label
+            for="numSolicitudes"
+            class="block font-medium text-gray-700 mb-2 text-sm"
+          >
+            Number of Requests
+          </label>
+          <div class="relative">
+            <input
+              type="number"
+              class="w-full h-10 rounded-lg px-3 border border-gray-300 text-center font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              id="numSolicitudes"
+              min="1"
+              max="100"
+              value="10"
+            />
+          </div>
+        </div>
+
+        <!-- Interval -->
+        <div class="flex-1">
+          <label
+            for="intervalo"
+            class="block font-medium text-gray-700 mb-2 text-sm"
+          >
+            Interval (ms)
+          </label>
+          <div class="relative">
+            <input
+              type="number"
+              class="w-full h-10 rounded-lg px-3 border border-gray-300 text-center font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              id="intervalo"
+              min="50"
+              max="1000"
+              value="100"
+            />
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex-1">
+          <label class="block font-medium text-transparent mb-2 text-sm">
+            Actions
+          </label>
+          <button
+            type="submit"
+            class="save-config-btn w-full h-10 flex items-center justify-center gap-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <i class="fas fa-save text-[16px]"></i>
+            <span class="font-medium text-sm">Save Config</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

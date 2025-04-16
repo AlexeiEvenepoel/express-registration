@@ -1,0 +1,254 @@
+<div
+  class="card rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden h-full"
+>
+  <!-- Compact Header -->
+  <div
+    class="card-header py-1.5 px-3 border-b border-gray-100 bg-gradient-to-r from-info to-blue-400 text-white"
+  >
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-users text-sm"></i>
+        <div>
+          <h3 class="text-sm font-semibold mb-0">Users</h3>
+          <span class="text-white/80 text-[10px]"
+            >Select users for execution</span
+          >
+        </div>
+      </div>
+      <button
+        class="bg-white/15 border border-white/30 text-white rounded py-1 px-2 text-xs flex items-center gap-1.5 hover:bg-white/25 transition-colors duration-200 focus:ring-2 focus:ring-white/50"
+        id="addUserBtn"
+        data-bs-toggle="modal"
+        data-bs-target="#addUserModal"
+      >
+        <i class="fas fa-user-plus text-[11px]"></i>
+        <span>Add User</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card-body p-2 flex flex-col gap-2">
+    <!-- User Selection Header -->
+    <div
+      class="flex justify-between items-center px-2 py-1 bg-gray-50/80 rounded"
+    >
+      <div class="flex items-center gap-1.5">
+        <span class="text-primary font-semibold text-xs" id="user-count"
+          >0</span
+        >
+        <span class="text-gray-600 text-[11px]">users selected</span>
+      </div>
+      <button
+        type="button"
+        class="select-all-btn group relative inline-flex items-center gap-1.5 py-1 px-2 rounded border border-primary/30 text-primary text-[11px] font-medium transition-all duration-200"
+        id="selectAllBtn"
+      >
+        <i
+          class="fas fa-check-double text-[10px] transition-transform group-hover:scale-110"
+        ></i>
+        <span class="relative z-10">Select All</span>
+        <div
+          class="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 rounded transition-opacity duration-200"
+        ></div>
+      </button>
+    </div>
+
+    <!-- User List Container - Con altura fija y scroll automático -->
+    <div
+      id="userList"
+      class="grid grid-cols-2 gap-1.5 overflow-y-auto pr-1 custom-scrollbar max-h-[calc(100vh-300px)] min-h-[200px]"
+    >
+      <!-- Users will be generated dynamically -->
+    </div>
+  </div>
+</div>
+
+<!-- Template for user items (will be created dynamically) -->
+<!-- 
+<div class="user-item group relative p-2 rounded border-l-2 border-transparent hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200" id="user-${userId}">
+  <div class="absolute top-2 right-2 flex items-center gap-1.5">
+    <button class="delete-user-btn opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-5 h-5 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-500 hover:text-white">
+      <i class="fas fa-times text-[10px]"></i>
+    </button>
+    <input type="checkbox" id="checkbox-${userId}" class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-1 focus:ring-primary/20 transition-all duration-200 cursor-pointer">
+  </div>
+  
+  <label for="checkbox-${userId}" class="block cursor-pointer">
+    <div class="pr-12">
+      <h4 class="font-medium text-sm text-gray-800 truncate mb-1">${name}</h4>
+      <div class="flex gap-1.5 mb-1">
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-[10px]">
+          <i class="fas fa-id-card text-gray-500 text-[9px]"></i>
+          ${dni}
+        </span>
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-[10px]">
+          <i class="fas fa-key text-gray-500 text-[9px]"></i>
+          ${codigo}
+        </span>
+      </div>
+    </div>
+  </label>
+  
+  <div class="status-indicator mt-1 py-0.5 px-2 rounded-full text-[10px] font-medium text-center transition-all duration-200 flex items-center justify-center gap-1">
+    <i class="fas fa-circle text-[8px] opacity-75"></i>
+    <span>Inactive</span>
+  </div>
+</div>
+-->
+
+<!-- Modal for Adding Custom User -->
+<div
+  class="modal fade"
+  id="addUserModal"
+  tabindex="-1"
+  aria-labelledby="addUserModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content rounded-xl border-none shadow-lg">
+      <div
+        class="modal-header bg-gradient-to-r from-info to-blue-400 text-white rounded-t-xl border-b border-white/10"
+      >
+        <h5 class="modal-title text-lg font-semibold" id="addUserModalLabel">
+          <i class="fas fa-user-plus mr-2"></i>
+          Add New User
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white opacity-75 hover:opacity-100 transition-opacity"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body p-6">
+        <form id="customUserForm" class="space-y-4">
+          <div>
+            <label
+              for="customUserName"
+              class="block font-medium text-gray-700 mb-1"
+              >Full Name</label
+            >
+            <input
+              type="text"
+              class="w-full rounded-lg px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              id="customUserName"
+              placeholder="John Doe"
+              required
+            />
+          </div>
+          <div>
+            <label
+              for="customUserDni"
+              class="block font-medium text-gray-700 mb-1"
+              >DNI Number</label
+            >
+            <input
+              type="text"
+              class="w-full rounded-lg px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              id="customUserDni"
+              pattern="\d{8}"
+              placeholder="72345678"
+              required
+            />
+            <div class="mt-1 text-sm text-gray-500">
+              Must be exactly 8 digits
+            </div>
+          </div>
+          <div>
+            <label
+              for="customUserCode"
+              class="block font-medium text-gray-700 mb-1"
+              >Student Code</label
+            >
+            <input
+              type="text"
+              class="w-full rounded-lg px-4 py-2.5 border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              id="customUserCode"
+              placeholder="2020101234A"
+              required
+            />
+          </div>
+          <div class="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <i class="fas fa-save mr-2"></i>
+              Add User
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Custom scrollbar styles optimized */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f1f1f1;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+    border-radius: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+  }
+
+  /* Mejora la animación para nuevos usuarios con escala */
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .new-user-animation {
+    animation: slideInUp 0.3s ease-out forwards;
+  }
+
+  /* Ajusta la grid para responsividad en pantallas pequeñas */
+  @media (max-width: 640px) {
+    #userList {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Ajuste dinámico de altura para diferentes tamaños de pantalla */
+  @media (max-height: 768px) {
+    #userList {
+      max-height: calc(100vh - 250px);
+    }
+  }
+
+  @media (min-height: 1024px) {
+    #userList {
+      max-height: 500px;
+    }
+  }
+</style>

@@ -1,0 +1,205 @@
+<div
+  class="card rounded-xl border border-gray-200 hover:shadow-lg overflow-hidden"
+>
+  <div
+    class="card-header p-4 border-b border-gray-100 bg-gradient-to-r from-dark to-gray-800 text-white flex justify-between items-center"
+  >
+    <h3 class="text-xl font-semibold mb-0">Results</h3>
+    <div class="flex items-center gap-3">
+      <!-- Controles del panel de resultados -->
+      <div class="flex items-center gap-2">
+        <!-- Dropdown de filtros -->
+        <div class="relative" id="resultsFilterDropdown">
+          <button
+            class="bg-gray-700 hover:bg-gray-600 text-white px-2.5 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors duration-200"
+            id="resultsFilterBtn"
+          >
+            <i class="fas fa-filter text-gray-300"></i>
+            <span>Filter</span>
+          </button>
+          <div
+            class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 hidden z-50"
+            id="resultsFilterMenu"
+          >
+            <div class="py-1 px-2">
+              <div
+                class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 py-1"
+              >
+                Message Types
+              </div>
+              <label
+                class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  class="mr-2 filter-option"
+                  data-type="success"
+                  checked
+                />
+                <i class="fas fa-check-circle text-green-500 mr-1.5"></i>
+                <span class="text-sm text-gray-700">Success</span>
+              </label>
+              <label
+                class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  class="mr-2 filter-option"
+                  data-type="error"
+                  checked
+                />
+                <i class="fas fa-times-circle text-red-500 mr-1.5"></i>
+                <span class="text-sm text-gray-700">Errors</span>
+              </label>
+              <label
+                class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  class="mr-2 filter-option"
+                  data-type="warning"
+                  checked
+                />
+                <i
+                  class="fas fa-exclamation-triangle text-yellow-500 mr-1.5"
+                ></i>
+                <span class="text-sm text-gray-700">Warnings</span>
+              </label>
+              <label
+                class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  class="mr-2 filter-option"
+                  data-type="info"
+                  checked
+                />
+                <i class="fas fa-info-circle text-blue-500 mr-1.5"></i>
+                <span class="text-sm text-gray-700">Info</span>
+              </label>
+            </div>
+            <div class="py-1 px-2">
+              <div
+                class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 py-1"
+              >
+                Display Options
+              </div>
+              <label
+                class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"
+              >
+                <input type="checkbox" class="mr-2" id="groupByUserCheckbox" />
+                <i class="fas fa-users text-gray-500 mr-1.5"></i>
+                <span class="text-sm text-gray-700">Group by user</span>
+              </label>
+              <label
+                class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"
+              >
+                <input type="checkbox" class="mr-2" id="compactModeCheckbox" />
+                <i class="fas fa-compress-alt text-gray-500 mr-1.5"></i>
+                <span class="text-sm text-gray-700">Compact mode</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botón cambiar visualización -->
+        <button
+          id="toggleViewBtn"
+          class="bg-gray-700 hover:bg-gray-600 text-white p-1.5 rounded-lg text-sm transition-colors duration-200"
+        >
+          <i class="fas fa-list-ul"></i>
+        </button>
+
+        <!-- Contador de mensajes -->
+        <span
+          id="messageCounter"
+          class="bg-primary text-xs font-medium px-2 py-1 rounded-full text-white min-w-[20px] flex items-center justify-center"
+          title="Message count"
+          >0</span
+        >
+      </div>
+
+      <!-- Botón limpiar resultados -->
+      <button
+        id="clearResultsBtn"
+        class="bg-gray-700 hover:bg-gray-600 text-white px-2.5 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-colors duration-200"
+      >
+        <i class="fas fa-trash-alt"></i>
+        <span>Clear</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card-body p-0">
+    <!-- Contenedor para agrupar mensajes por usuario (oculto por defecto) -->
+    <div id="userGroupsContainer" class="p-3 space-y-2 hidden"></div>
+
+    <!-- Vista principal de resultados -->
+    <div class="results-main-view">
+      <!-- Barra de herramientas -->
+      <div
+        class="bg-gray-800 px-3 py-2 border-b border-gray-700 flex justify-between items-center"
+        id="resultsToolbar"
+      >
+        <div class="flex items-center gap-2">
+          <button
+            id="autoScrollBtn"
+            class="text-sm text-gray-400 hover:text-white flex items-center gap-1.5 transition-colors px-2 py-1 rounded-md hover:bg-gray-700 active"
+            title="Toggle auto-scroll"
+          >
+            <i class="fas fa-angle-double-down"></i>
+            <span>Auto-scroll</span>
+          </button>
+          <div class="h-4 border-r border-gray-600 mx-1"></div>
+          <span class="text-xs text-gray-400 flex items-center gap-1">
+            <i class="far fa-clock"></i>
+            <span id="lastUpdateTime">--:--:--</span>
+          </span>
+        </div>
+        <div class="flex items-center">
+          <button
+            id="searchToggleBtn"
+            class="text-gray-400 hover:text-white p-1.5 rounded-md hover:bg-gray-700 transition-colors"
+            title="Search messages"
+          >
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de búsqueda (oculta por defecto) -->
+      <div
+        id="searchBar"
+        class="bg-gray-800 px-3 py-2 border-b border-gray-700 hidden"
+      >
+        <div class="relative">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search messages..."
+            class="w-full bg-gray-700 text-white text-sm rounded-lg px-3 py-1.5 border border-gray-600 focus:ring-primary focus:border-primary"
+          />
+          <span
+            id="searchResultsCount"
+            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400"
+          ></span>
+        </div>
+      </div>
+
+      <!-- Contenedor de mensajes -->
+      <div
+        id="resultsContainer"
+        class="bg-gray-900 min-h-[200px] max-h-[400px] overflow-y-auto"
+      >
+        <div
+          id="resultsList"
+          class="p-3 space-y-1 font-mono text-sm leading-relaxed"
+        >
+          <div class="text-gray-500 italic text-center py-4">
+            Results will be displayed here...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
