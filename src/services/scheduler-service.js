@@ -129,7 +129,7 @@ function programarEjecucion(userIds, fechaHora) {
     },
     {
       scheduled: true,
-      timezone: timezone, // Zona horaria configurada
+      timezone: "America/Lima", // Zona horaria explícita del Perú
     }
   );
 
